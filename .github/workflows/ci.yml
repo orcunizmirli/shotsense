@@ -48,7 +48,7 @@ jobs:
             "https://github.com/nicklockwood/SwiftFormat/releases/download/${SWIFTFORMAT_VERSION}/swiftformat.artifactbundle.zip"
           unzip -q -o /tmp/sf.zip -d /tmp/sf
           echo "SWIFTFORMAT_BIN=/tmp/sf/swiftformat.artifactbundle/swiftformat-${SWIFTFORMAT_VERSION}-macos/bin/swiftformat" >> "$GITHUB_ENV"
-      - run: "$SWIFTLINT_BIN" lint --strict
+      - run: $SWIFTLINT_BIN lint --strict
       - run: chmod +x "$SWIFTFORMAT_BIN" && "$SWIFTFORMAT_BIN" --lint .
 
   discover:
