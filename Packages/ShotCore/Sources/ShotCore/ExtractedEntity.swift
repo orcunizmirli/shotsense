@@ -93,8 +93,7 @@ public struct ExtractedEntity: Sendable, Codable, Hashable, Identifiable {
     /// hem tam tarih-saat hem de yalnız-tarih biçiminde gelebilir; ikisi de kabul edilir.
     public var dateValue: Date? {
         guard kind == .date else { return nil }
-        return ISO8601DateFormatter.shotSense.date(from: normalizedValue)
-            ?? ISO8601DateFormatter.shotSenseDateOnly.date(from: normalizedValue)
+        return ISO8601.parse(normalizedValue)
     }
 
     /// Tutar türü varlığın sayısal karşılığı.
@@ -104,20 +103,28 @@ public struct ExtractedEntity: Sendable, Codable, Hashable, Identifiable {
     }
 }
 
-extension ISO8601DateFormatter {
-    /// Varlık normalizasyonunda kullanılan tek biçimlendirici.
-    ///
-    /// Ekran görüntülerinde saat bilgisi çoğu zaman yoktur; bu yüzden tam tarih-saat ve
-    /// yalnız-tarih biçimlerinin ikisi de kabul edilir.
-    public static let shotSense: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
+/// Varlık normalizasyonunda kullanılan ISO-8601 biçimleri.
+///
+/// `ISO8601DateFormatter` yerine `Date.ISO8601FormatStyle`: sınıf tabanlı biçimlendirici
+/// `Sendable` değildir ve paylaşılan bir `static` örneği Swift 6 katı eşzamanlılığında
+/// derlenmez (`formatOptions` sonradan değiştirilebildiği için gerçek bir veri yarışı
+/// riski taşır). Biçim stili bir `struct`'tır: değer tipi olduğu için paylaşımı güvenlidir.
+public enum ISO8601 {
+    /// Tam tarih-saat: `2026-01-12T09:41:00Z`.
+    public static let dateTime = Date.ISO8601FormatStyle()
 
-    public static let shotSenseDateOnly: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate]
-        return formatter
-    }()
+    /// Yalnız tarih: `2026-01-12`.
+    ///
+    /// Ekran görüntülerinde saat bilgisi çoğu zaman yoktur; model de sık sık yalnız
+    /// tarih üretir. İki biçimin ikisi de kabul edilir.
+    public static let dateOnly = Date.ISO8601FormatStyle().year().month().day()
+
+    /// Her iki biçimi de deneyerek çözümler.
+    public static func parse(_ value: String) -> Date? {
+        (try? dateTime.parse(value)) ?? (try? dateOnly.parse(value))
+    }
+
+    public static func string(from date: Date) -> String {
+        dateTime.format(date)
+    }
 }

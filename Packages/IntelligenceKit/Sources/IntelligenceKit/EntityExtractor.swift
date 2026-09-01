@@ -47,7 +47,7 @@ public struct EntityExtractor: Sendable {
                 return ExtractedEntity(
                     kind: .date,
                     rawValue: raw,
-                    normalizedValue: ISO8601DateFormatter.shotSense.string(from: date),
+                    normalizedValue: ISO8601.string(from: date),
                     confidence: 0.85
                 )
             case .link:

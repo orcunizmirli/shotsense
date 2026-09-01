@@ -43,7 +43,7 @@ struct ShotDetailViewModelTests {
             paywall: PaywallPresenter()
         )
 
-        #expect(model.actionableDate == ISO8601DateFormatter.shotSense.date(from: "2026-02-14T00:00:00Z"))
+        #expect(model.actionableDate == ISO8601.parse("2026-02-14T00:00:00Z"))
     }
 
     @Test("Hatırlatıcı çıkarılan tarihle oluşturulur")
