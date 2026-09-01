@@ -1,3 +1,4 @@
+import AppFoundation
 import Foundation
 
 // Bu dosya domain'in dış dünyaya açılan **tek** yüzeyidir. Her protokol bir adaptör paketi
@@ -155,6 +156,16 @@ public protocol ActionPerforming: Sendable {
     func createCalendarEvent(_ draft: CalendarEventDraft) async throws
 }
 
+/// Panoya yazma.
+///
+/// Ayrı bir port olmasının sebebi `UIPasteboard`'un UIKit'te olmasıdır: arayüz paketi
+/// UIKit import edemez (R6). Ayrıca hassas değerlerin panoda süresiz kalmaması gerekir
+/// (07 §4) ve bu kural tek bir yerde uygulanmalıdır.
+public protocol ClipboardWriting: Sendable {
+    /// - Parameter isSensitive: doğruysa pano girdisi kısa süre sonra kendini siler.
+    func copy(_ text: String, isSensitive: Bool)
+}
+
 // MARK: - Abonelik
 
 public struct PurchasableProduct: Sendable, Hashable, Identifiable {
@@ -195,6 +206,15 @@ public protocol EntitlementProviding: Sendable {
     func availableProducts() async throws -> [PurchasableProduct]
     func purchase(productIdentifier: String) async throws -> PurchaseOutcome
     func restorePurchases() async throws
+}
+
+/// Kullanıcı tercihlerinin kalıcılığı.
+///
+/// `FeatureFlags` bir uzaktan yapılandırma değildir (KANON §1: ağ yok) — kullanıcının
+/// Ayarlar'da açıp kapattığı tercihlerdir ve cihazda saklanır.
+public protocol SettingsStoring: Sendable {
+    func flags() async -> FeatureFlags
+    func update(_ flags: FeatureFlags) async
 }
 
 /// Free katman kota sayacı (cihazda tutulur, 06 §4).

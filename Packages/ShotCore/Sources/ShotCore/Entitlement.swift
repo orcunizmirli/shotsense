@@ -49,7 +49,7 @@ public enum MeteredCapability: String, Sendable, Codable, CaseIterable, Hashable
 }
 
 /// Paywall'un hangi bağlamda açıldığı — metin seçimi ve frekans kapağı bunu kullanır (06 §5).
-public enum PaywallTrigger: String, Sendable, Codable, Hashable {
+public enum PaywallTrigger: String, Sendable, Codable, CaseIterable, Hashable {
     case indexLimitReached
     case searchQuotaExhausted
     case actionQuotaExhausted

@@ -65,6 +65,13 @@ let rules: [Rule] = [
         forbiddenSymbols: []
     ),
     Rule(
+        id: "R6",
+        description: "UIKit yasak — arayüz SwiftUI, görsel işleri ImageIO/CoreGraphics ile yapılır.",
+        packages: [],
+        forbiddenImports: ["UIKit"],
+        forbiddenSymbols: []
+    ),
+    Rule(
         id: "R7",
         description: "KANON §1 — ShotSense ağ isteği yapmaz.",
         packages: [],

@@ -42,7 +42,7 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-032 | `SearchIntent` LLM ayrıştırma + filtre çipleri | 0.5 |
 | SS-033 | Sıralama regresyon testleri (altın sorgular) | 0.5 |
 
-## M4 — Arayüz (5 gün)
+## M4 — Arayüz (5 gün) ✅
 
 | ID | Task | Tahmin |
 |---|---|---|

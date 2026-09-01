@@ -48,7 +48,7 @@
 | `IndexKit` | `HybridIndex: ShotIndexing` (BM25 + embedding), kalıcılık (SwiftData) | SwiftData, NaturalLanguage |
 | `ActionKit` | `EventKitActionPerformer: ActionPerforming` | EventKit, Contacts |
 | `PaywallKit` | `StoreKitEntitlementProvider: EntitlementProviding`, ürün katalogu | StoreKit |
-| `DesignSystem` | Token'lar (renk/tipografi/aralık), `ShotCard`, `CategoryBadge`, `EmptyStateView` | SwiftUI |
+| `DesignSystem` | Token'lar, `ShotCard`, `CategoryBadge`, `EntityRow`, durum görünümleri | SwiftUI, ImageIO |
 | `LibraryKit` | Tüm ekranlar + view model'ler | SwiftUI, ShotCore, DesignSystem |
 
 ## 4. Bağımlılık kuralları (CI'da `Scripts/dependency-lint.swift` denetler)
@@ -58,7 +58,9 @@
 - **R3** `LibraryKit` hiçbir adaptörü import edemez — yalnız `ShotCore` portlarını kullanır.
 - **R4** Yalnız App target adaptör + UI'yi birlikte import edebilir.
 - **R5** `DesignSystem` `ShotCore` dışında domain bilmez; iş kuralı içermez.
-- **R6** Hiçbir pakette `import UIKit` yoktur (SwiftUI + gerekli yerde `UIImage` köprüsü hariç, `DesignSystem` ve `IngestKit`).
+- **R6** Hiçbir pakette `import UIKit` yoktur — istisnasız. Görsel çözme/küçültme `ImageIO` +
+  `CoreGraphics` ile yapılır (`SwiftUI.Image(decorative:scale:)` `CGImage` alır). Bu sayede tüm
+  paketler macOS'ta da derlenir ve testleri simülatör başlatmadan koşar.
 - **R7** Hiçbir pakette `URLSession`, `Network`, `CFSocket` geçmez. **İhlali build'i kırar.**
 
 ## 5. Eşzamanlılık modeli

@@ -1,4 +1,6 @@
+import AppFoundation
 import Foundation
+import ShotCoreTestSupport
 import Testing
 @testable import ShotCore
 

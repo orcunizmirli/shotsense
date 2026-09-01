@@ -21,6 +21,8 @@ packages:
   IntelligenceKit: { path: Packages/IntelligenceKit }
   IngestKit:       { path: Packages/IngestKit }
   IndexKit:        { path: Packages/IndexKit }
+  DesignSystem:    { path: Packages/DesignSystem }
+  LibraryKit:      { path: Packages/LibraryKit }
 
 targets:
   ShotSenseApp:
@@ -36,6 +38,8 @@ targets:
       - { package: IntelligenceKit }
       - { package: IngestKit }
       - { package: IndexKit }
+      - { package: DesignSystem }
+      - { package: LibraryKit }
     info:
       path: App/Info.plist
       properties:
