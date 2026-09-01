@@ -8,6 +8,12 @@ import SwiftUI
 /// **Sıralama kanonu (KANON §9):** izin ekranı asla ilk ekran değildir. Kullanıcı önce
 /// ürünün kendi ekran görüntüsünde ne yaptığını **görür**, sonra izin istenir. İzin
 /// ekranını öne almak, değeri görmeden reddeden kullanıcı üretir ve o karar kalıcıdır.
+///
+/// `@MainActor`: `body` dışındaki yardımcı görünüm özellikleri (valueStep, sampleStep, …)
+/// varsayılan olarak izole DEĞİLDİR; oradan `@MainActor` bir görünüm değiştiricisini
+/// (DesignSystem'in `surfaceCard`ı) çağırmak Swift 6'da hata, `@State` okumak uyarıdır.
+/// Tip düzeyinde işaretlemek doğru olanı söyler: bu görünümün tamamı ana aktörde yaşar.
+@MainActor
 struct OnboardingFlow: View {
     enum Step: Int, CaseIterable {
         case value
