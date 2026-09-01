@@ -79,3 +79,30 @@ Bağımlılık kurallarını denetlemek için:
 ```bash
 swift Scripts/dependency-lint.swift
 ```
+
+Biçim ve stil denetimi (CI ile **aynı sürümler**; sürüm değişince kural davranışı da
+değişir, bu yüzden ikisi de sabitlenmiştir):
+
+```bash
+swiftlint lint --strict       # 0.62.0
+swiftformat --lint .          # 0.62.1
+```
+
+macOS dışında (ör. Linux konteyner) Xcode olmadan da koşabilirler:
+
+```bash
+curl -fsSL -o sf.zip https://github.com/nicklockwood/SwiftFormat/releases/download/0.62.1/swiftformat_linux.zip
+curl -fsSL -o sl.zip https://github.com/realm/SwiftLint/releases/download/0.62.0/swiftlint_linux_amd64.zip
+unzip -q sf.zip && unzip -q sl.zip -d sl
+./swiftformat_linux --lint .
+./sl/swiftlint-static lint --strict   # `swiftlint` değil: statik ikili SourceKit istemez
+```
+
+`.swiftformat` içinde kapatılan her kuralın gerekçesi dosyanın kendisinde yazılıdır.
+
+İş akışını değiştirdikten sonra YAML'ı doğrula — bozuk bir iş akışı tek iş bile
+üretmeden düşer ve hata mesajı vermez:
+
+```bash
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print('OK')"
+```
