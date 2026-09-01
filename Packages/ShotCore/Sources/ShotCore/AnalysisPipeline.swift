@@ -39,7 +39,9 @@ public actor AnalysisPipeline {
     /// Free katmanda yalnız en yeni N görsel indekslenir; `nil` = sınırsız (Pro).
     private var indexLimit: Int?
 
-    private var isRunning = false
+    /// Yeniden girişi engelleyen bayrak — `IndexingProgress.isRunning` ile
+    /// karıştırılmamalı: o "iş kaldı mı", bu "parti şu an işleniyor mu" demektir.
+    private var isProcessingBatch = false
     private var progressContinuations: [UUID: AsyncStream<IndexingProgress>.Continuation] = [:]
 
     public init(
@@ -83,8 +85,11 @@ public actor AnalysisPipeline {
 
     private func publishProgress() async {
         guard let counts = try? await index.counts() else { return }
+        // `isRunning` "bir parti şu an işleniyor" değil, "yapılacak iş kaldı" demektir.
+        // Arayüzün ihtiyacı olan budur: partiler arasındaki boşlukta rozetin kaybolup
+        // yeniden belirmesi, kullanıcıya sistemin durup başladığı izlenimi verirdi.
         let progress = IndexingProgress(
-            analyzed: counts.analyzed, total: counts.total, isRunning: isRunning
+            analyzed: counts.analyzed, total: counts.total, isRunning: counts.pending > 0
         )
         for continuation in progressContinuations.values {
             continuation.yield(progress)
@@ -153,9 +158,9 @@ public actor AnalysisPipeline {
     ///   (sistem `BGProcessingTask`'ı sonlandırabilir), bu yüzden çağıran küçük partiler ister.
     @discardableResult
     public func processPending(limit: Int = 50) async -> Int {
-        guard !isRunning else { return 0 }
-        isRunning = true
-        defer { isRunning = false }
+        guard !isProcessingBatch else { return 0 }
+        isProcessingBatch = true
+        defer { isProcessingBatch = false }
 
         guard let identifiers = try? await index.pendingAssetIdentifiers(limit: limit),
               !identifiers.isEmpty

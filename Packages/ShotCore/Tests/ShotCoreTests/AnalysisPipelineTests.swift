@@ -204,10 +204,14 @@ struct AnalysisPipelineTests {
         let afterSync = await iterator.next()
         #expect(afterSync?.total == 2)
         #expect(afterSync?.analyzed == 0)
+        // Bekleyen iş varken "çalışıyor": rozet partiler arasında kaybolup belirmemeli.
+        #expect(afterSync?.isRunning == true)
 
         await pipeline.processPending()
         let afterProcessing = await iterator.next()
         #expect(afterProcessing?.analyzed == 2)
         #expect(afterProcessing?.fraction == 1)
+        // İş bitince rozet gizlenir.
+        #expect(afterProcessing?.isRunning == false)
     }
 }
