@@ -14,21 +14,16 @@ enum BackgroundIndexer {
     /// Uygulama başlatılırken, `application(_:didFinishLaunching...)` eşdeğerinde çağrılır.
     /// Kayıt gecikirse sistem görevi hiç teslim etmez.
     static func register(pipeline: AnalysisPipeline, settings: any SettingsStoring) {
-        // `using: .main` bilinçli: `nil` verilirse sistem işleyiciyi kendi arka plan
-        // kuyruğunda çağırır ve `BGTask` Sendable OLMADIĞI için görevi asenkron işe
-        // taşımak veri yarışı olur (Swift 6 bunu derlemez). Ana kuyrukta kalınca görev
-        // ana aktöre bağlıdır ve tamamlama çağrısı tek bir yerden yapılır. İşleyici
-        // ağır iş yapmaz; yalnız asenkron işi başlatıp döner.
+        // `using: nil`: sistem işleyiciyi kendi arka plan kuyruğunda çağırır. Ana kuyruğa
+        // taşımanın anlamı yok — işleyici ağır iş yapmaz, yalnız asenkron işi başlatır.
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: identifier, using: .main
+            forTaskWithIdentifier: identifier, using: nil
         ) { task in
-            MainActor.assumeIsolated {
-                guard let processingTask = task as? BGProcessingTask else {
-                    task.setTaskCompleted(success: false)
-                    return
-                }
-                handle(processingTask, pipeline: pipeline, settings: settings)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
             }
+            handle(processingTask, pipeline: pipeline, settings: settings)
         }
     }
 
@@ -50,12 +45,24 @@ enum BackgroundIndexer {
         }
     }
 
-    @MainActor
+    /// Sistemin verdiği görevi asenkron işe taşımak için gereken kutu.
+    ///
+    /// `BGTask` Sendable **değildir** ve sistem onu izole olmayan bir kuyrukta teslim
+    /// eder; işin kendisi ise zorunlu olarak asenkrondur. Kutu, derleyiciye verilen
+    /// sözü tek bir yerde ve görünür kılar: kutudaki görev YALNIZ aşağıdaki tek iş
+    /// tarafından, yalnız `setTaskCompleted` için kullanılır. Süre dolum işleyicisi
+    /// göreve hiç dokunmaz — yalnız `Task`ı iptal eder ve `Task` zaten Sendable'dır.
+    private struct SystemTaskBox: @unchecked Sendable {
+        let task: BGProcessingTask
+    }
+
     private static func handle(
         _ task: BGProcessingTask,
         pipeline: AnalysisPipeline,
         settings: any SettingsStoring
     ) {
+        let box = SystemTaskBox(task: task)
+
         // Bir sonraki tur hemen planlanır: sistem görevi sonlandırsa bile zincir kopmaz.
         Task {
             await schedule(settings: settings.flags())
@@ -68,7 +75,7 @@ enum BackgroundIndexer {
             while await pipeline.processPending(limit: 25) > 0 {
                 if Task.isCancelled { break }
             }
-            task.setTaskCompleted(success: true)
+            box.task.setTaskCompleted(success: true)
         }
 
         task.expirationHandler = {
