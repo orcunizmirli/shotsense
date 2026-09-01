@@ -40,6 +40,9 @@ public final class LibraryViewModel {
 
     private var isLoadingMore = false
     private var hasMorePages = true
+    /// İlerleme akışı dinleyicisi. İndeksleme bitince iptal edilir; aksi hâlde ekran her
+    /// açıldığında yeni bir dinleyici doğar ve hiçbiri ölmez.
+    private var progressTask: Task<Void, Never>?
     /// İndeksleme sürerken ızgaranın ne sıklıkta yenileneceği.
     ///
     /// Her partide (25 kayıt) yenilemek ızgarayı saniyede birkaç kez baştan kurar ve
@@ -161,10 +164,17 @@ public final class LibraryViewModel {
         }
 
         let pipeline = dependencies.pipeline
-        Task { @MainActor [weak self] in
+        progressTask?.cancel()
+        progressTask = Task { @MainActor [weak self] in
             for await update in await pipeline.progress() {
+                guard !Task.isCancelled else { return }
                 self?.progress = update
             }
+        }
+        defer {
+            progressTask?.cancel()
+            progressTask = nil
+            progress = nil
         }
 
         while await pipeline.processPending(limit: 25) > 0 {
