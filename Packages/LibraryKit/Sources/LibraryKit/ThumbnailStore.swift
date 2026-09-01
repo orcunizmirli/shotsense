@@ -115,9 +115,7 @@ public final class ThumbnailStore {
 
         let pixelSize = decodePixelSize
         let decoded = await Self.decode(payloads, maxPixelSize: pixelSize)
-        for (identifier, image) in decoded {
-            insert(image, for: identifier)
-        }
+        apply(decoded)
 
         // Parti işlenirken yeni istekler birikmiş olabilir.
         if !queued.isEmpty { scheduleFlush() }
@@ -144,10 +142,28 @@ public final class ThumbnailStore {
 
     // MARK: - Önbellek yönetimi
 
-    private func insert(_ image: CGImage, for identifier: String) {
-        cache[identifier] = image
-        touch(identifier)
-        evictIfNeeded()
+    /// Bir partinin tamamını **tek** sözlük mutasyonuyla uygular.
+    ///
+    /// Kritik: `cache` gözlemlenen bir özelliktir ve Observation onu anahtar bazında değil
+    /// bütün olarak izler. Her görseli ayrı ayrı yazmak, görünen HER hücreyi her görselde
+    /// yeniden çizdirir — 30 hücre × 15 görsel = 450 gövde değerlendirmesi. Partiyi tek
+    /// atamada uygulamak bunu 30'a indirir.
+    private func apply(_ decoded: [String: CGImage]) {
+        guard !decoded.isEmpty else { return }
+
+        var updated = cache
+        for (identifier, image) in decoded {
+            updated[identifier] = image
+            if let existing = recency.firstIndex(of: identifier) {
+                recency.remove(at: existing)
+            }
+            recency.append(identifier)
+        }
+        // Tahliye de aynı geçişte yapılır; ayrı bir mutasyon daha yaratmaz.
+        while recency.count > capacity {
+            updated.removeValue(forKey: recency.removeFirst())
+        }
+        cache = updated
     }
 
     private func touch(_ identifier: String) {
@@ -156,13 +172,6 @@ public final class ThumbnailStore {
             recency.remove(at: existing)
         }
         recency.append(identifier)
-    }
-
-    private func evictIfNeeded() {
-        while recency.count > capacity {
-            let oldest = recency.removeFirst()
-            cache.removeValue(forKey: oldest)
-        }
     }
 
     /// Kayıt güncellendiğinde (yeniden analiz, yeni önizleme) çağrılır.
