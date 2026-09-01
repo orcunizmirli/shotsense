@@ -42,8 +42,10 @@ saklanır. Kullanıcı Photos'tan silerse kayıt "yetim" işaretlenir ve temizle
     var thumbnailData: Data?           // 320px JPEG
     var perceptualHash: UInt64         // yinelenen tespiti (P1)
 
-    @Relationship(deleteRule: .cascade) var entities: [ExtractedEntity]
-    @Relationship(inverse: \Collection.shots) var collections: [Collection]
+    // Varlıklar ayrı bir @Model değil, JSON blob'u olarak saklanır: her zaman kaydın
+    // tamamıyla birlikte okunurlar, hiçbir zaman tek başlarına sorgulanmazlar. Ayrı tablo
+    // yalnız ilişki göçü maliyeti getirirdi.
+    var entitiesData: Data              // [ExtractedEntity] JSON'u
 }
 
 @Model final class ExtractedEntity {
@@ -81,28 +83,36 @@ saklanır. Kullanıcı Photos'tan silerse kayıt "yetim" işaretlenir ve temizle
 kullanır. Dönüşüm `ShotMapper` ile tek yönde yapılır. Bunun sebebi R1 kuralı: domain SwiftData
 bilmez, dolayısıyla birim testleri simülatörsüz koşar.
 
-## 4. İndeks dosyası
+## 4. Arama indeksi
+
+İndeks **bellek-içidir** ve her açılışta SwiftData'dan kurulur (`HybridIndex.warmUp`).
 
 ```
-index.bin
-├── header  { version, docCount, avgDocLength, vocabularySize }
-├── vocabulary   [term → termID]  (sıralı, delta kodlu)
-├── postings     [termID → (docID, tf)*]  (varint)
-└── docMeta      [docID → (assetID hash, length, createdAt, category)]
+BM25Index
+├── postings        [term → (documentID → tf)]
+├── documentLengths [documentID → token sayısı]
+└── documentTerms   [documentID → terimler]   (silmeyi sözlük boyutundan bağımsız kılar)
+
+documents           [assetIdentifier → IndexedDocument]
+└── IndexedDocument { createdAt, category, amounts, title, summary, tags, embedding }
 ```
 
-Embedding'ler ayrı `vectors.bin` içinde ham `Float32` blob (docCount × 512). Kosinüs için
-normalize edilmiş saklanır → arama sırasında yalnız nokta çarpımı.
+**Neden diske ikili biçim yazılmıyor:** 5.000 belge için sözlük ~4 MB, vektörler ~10 MB
+tutar; bu modern bir iPhone'da sorun değil ve kuruluş ~1 sn sürer. Özel bir dosya biçimi
+yazmak, onu sürümlemek ve göç ettirmek ancak kitaplık on binlere çıkınca kazanç sağlar.
+Kaynak veri SwiftData'da durduğu için indeks her zaman kayıpsız yeniden kurulabilir —
+bu, "indeks biçimi göçü" diye bir sorunu tamamen ortadan kaldırır.
 
-5.000 belge için: postings ~4 MB, vektörler 5.000×512×4 B ≈ 10 MB. Bellekte tutulabilir.
+Vektörler **tam OCR metninden değil**, başlık + özet + etiketlerden üretilir: ekran
+görüntüsü metni arayüz gürültüsüyle ("Geri", "Paylaş", saat, pil) doludur ve cümle
+vektörü bu gürültüde anlamı kaybeder. Ham metin zaten BM25 tarafında kapsanır.
 
 ## 5. Migration politikası
 
 - **SwiftData şeması**: `VersionedSchema` + `SchemaMigrationPlan`, hafif migration tercih edilir.
 - **Analiz şeması** (`AnalysisSchemaVersion`): artınca kayıtlar silinmez; `status` değişmez ama
   `schemaVersion < current` olanlar düşük öncelikli yeniden analiz kuyruğuna alınır.
-- **İndeks formatı**: header'daki `version` uyuşmazsa indeks **sıfırdan** yeniden kurulur
-  (kaynak veri SwiftData'da durduğu için kayıpsız, ~30 sn).
+- **Arama indeksi**: bellek-içi olduğu için göç gerektirmez; her açılışta yeniden kurulur.
 
 ## 6. Silme semantiği
 

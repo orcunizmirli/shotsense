@@ -114,6 +114,10 @@ public protocol ShotIndexing: Sendable {
     /// Analiz bekleyen asset kimlikleri, öncelik sırasıyla.
     func pendingAssetIdentifiers(limit: Int) async throws -> [String]
     func counts() async throws -> IndexCounts
+    /// Önizleme verisi. Kaydın kendisiyle birlikte değil, ayrı yazılır: küçültme
+    /// görsel yükleme adımına bağlıdır ve analiz başarısız olsa da önizleme kullanılabilir.
+    func setThumbnail(_ data: Data, for assetIdentifier: String) async throws
+    func thumbnail(for assetIdentifier: String) async throws -> Data?
     /// Türev veriyi siler; kaynak görsellere dokunmaz (05 §6).
     func resetIndex() async throws
 }

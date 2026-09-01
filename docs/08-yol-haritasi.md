@@ -23,7 +23,7 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-014 | `ExtractionValidator` (grounding, IBAN mod-97, ISO-4217) | 0.5 |
 | SS-015 | Altın küme + doğruluk testi, CI eşiği %70 (şu an 18 örnek; 60 hedef) | 0.5 |
 
-## M2 — Alım ve kalıcılık (4 gün)
+## M2 — Alım ve kalıcılık (4 gün) ✅
 
 | ID | Task | Tahmin |
 |---|---|---|
@@ -33,11 +33,11 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-023 | `AnalysisPipeline` actor: kuyruk, öncelik, iptal, geri çekilme | 1 |
 | SS-024 | `BGProcessingTask` kaydı + termal/pil politikası | 0.5 |
 
-## M3 — Arama (3 gün)
+## M3 — Arama (3 gün) ✅
 
 | ID | Task | Tahmin |
 |---|---|---|
-| SS-030 | BM25 indeksi (tokenizer, posting list, binary serileştirme) | 1.5 |
+| SS-030 | BM25 indeksi (tokenizer, posting list, bellek-içi — 05 §4) | 1.5 |
 | SS-031 | `NLEmbedding` vektörleri + kosinüs + hibrit skor | 0.5 |
 | SS-032 | `SearchIntent` LLM ayrıştırma + filtre çipleri | 0.5 |
 | SS-033 | Sıralama regresyon testleri (altın sorgular) | 0.5 |

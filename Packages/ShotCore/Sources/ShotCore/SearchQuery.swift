@@ -100,12 +100,16 @@ public struct SearchQuery: Sendable, Hashable {
     }
 
     /// Bir kaydın filtrelerden geçip geçmediği. Skorlamadan **önce** uygulanır (04 §6).
-    public func matchesFilters(_ shot: Shot) -> Bool {
-        if let category = intent.category, shot.analysis.category != category { return false }
-        if let interval = dateInterval, !interval.contains(shot.createdAt) { return false }
+    ///
+    /// Girdi `Shot` değil `ShotFilterable`'dır: arama sıcak yolunda tam kayıtları (OCR metniyle
+    /// birlikte) belleğe açmak pahalıdır; indeks katmanı hafif bir özet tiple süzme yapıp
+    /// yalnız kazananların tam kaydını okur.
+    public func matchesFilters(_ candidate: some ShotFilterable) -> Bool {
+        if let category = intent.category, candidate.filterCategory != category { return false }
+        if let interval = dateInterval, !interval.contains(candidate.filterCreatedAt) { return false }
 
         if intent.minAmount != nil || intent.maxAmount != nil {
-            let amounts = shot.analysis.displayableEntities.compactMap(\.amountValue)
+            let amounts = candidate.filterAmounts
             guard !amounts.isEmpty else { return false }
             if let minAmount = intent.minAmount, !amounts.contains(where: { $0 >= minAmount }) {
                 return false
@@ -116,6 +120,23 @@ public struct SearchQuery: Sendable, Hashable {
         }
         return true
     }
+}
+
+/// Filtrelemenin ihtiyaç duyduğu asgari alanlar.
+///
+/// Hem tam `Shot` hem de indeksin bellek-içi özet tipi bunu karşılar; filtre semantiği
+/// tek yerde tanımlı kalır ve iki uygulama arasında ayrışamaz.
+public protocol ShotFilterable {
+    var filterCategory: ShotCategory { get }
+    var filterCreatedAt: Date { get }
+    /// Yalnız temellendirilmiş tutarlar (KANON §6): uydurulmuş bir tutar filtreye giremez.
+    var filterAmounts: [Double] { get }
+}
+
+extension Shot: ShotFilterable {
+    public var filterCategory: ShotCategory { analysis.category }
+    public var filterCreatedAt: Date { createdAt }
+    public var filterAmounts: [Double] { analysis.displayableEntities.compactMap(\.amountValue) }
 }
 
 /// Sıralanmış arama sonucu.

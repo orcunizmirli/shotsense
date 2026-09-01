@@ -19,6 +19,8 @@ packages:
   ShotCore:        { path: Packages/ShotCore }
   OCRKit:          { path: Packages/OCRKit }
   IntelligenceKit: { path: Packages/IntelligenceKit }
+  IngestKit:       { path: Packages/IngestKit }
+  IndexKit:        { path: Packages/IndexKit }
 
 targets:
   ShotSenseApp:
@@ -32,6 +34,8 @@ targets:
       - { package: ShotCore }
       - { package: OCRKit }
       - { package: IntelligenceKit }
+      - { package: IngestKit }
+      - { package: IndexKit }
     info:
       path: App/Info.plist
       properties:
