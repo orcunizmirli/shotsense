@@ -30,7 +30,10 @@ struct OnboardingFlow: View {
     var body: some View {
         VStack(spacing: Token.Space.xl) {
             ProgressView(value: Double(step.rawValue + 1), total: Double(Step.allCases.count))
+                .progressViewStyle(.linear)
+                .tint(Color.accentColor)
                 .padding(.horizontal, Token.Space.lg)
+                .animation(Token.Motion.standard, value: step)
 
             Group {
                 switch step {
@@ -41,6 +44,13 @@ struct OnboardingFlow: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Adımlar yatay kayarak geçer: kullanıcı akışta nerede olduğunu ve geri
+            // dönüşün mümkün olduğunu hareketten anlar.
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            ))
+            .animation(Token.Motion.standard, value: step)
 
             footer
         }
@@ -56,7 +66,7 @@ struct OnboardingFlow: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.tint)
             Text("Ekran görüntülerin aranabilir olsun")
-                .font(.title2.bold())
+                .font(Token.Typography.display)
                 .multilineTextAlignment(.center)
             Text("ShotSense fişleri, biletleri, wifi şifrelerini ve daha fazlasını cihazında "
                 + "tanır. Hiçbir görselin telefonundan çıkmaz.")
@@ -73,12 +83,13 @@ struct OnboardingFlow: View {
     private var sampleStep: some View {
         VStack(spacing: Token.Space.lg) {
             Text("Bir ekran görüntüsü seç, ne yapabildiğimizi gör")
-                .font(.title3.bold())
+                .font(Token.Typography.title)
                 .multilineTextAlignment(.center)
 
             if let sampleImage {
-                ThumbnailImage(data: sampleImage)
-                    .frame(maxHeight: 220)
+                DecodedImage(data: sampleImage, maxPixelSize: 900)
+                    .aspectRatio(9 / 16, contentMode: .fit)
+                    .frame(maxHeight: 240)
             }
 
             if isAnalyzing {
@@ -108,9 +119,11 @@ struct OnboardingFlow: View {
                     sampleImage == nil ? "Ekran görüntüsü seç" : "Başka bir tane dene",
                     systemImage: "photo"
                 )
-                .frame(minHeight: Token.minimumTapTarget)
+                .font(Token.Typography.headline)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .surfaceCard(radius: Token.Radius.md)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.pressable)
         }
         .task(id: selection) {
             await loadSample()
@@ -135,7 +148,7 @@ struct OnboardingFlow: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.tint)
             Text("Tüm ekran görüntülerini indeksleyelim mi?")
-                .font(.title3.bold())
+                .font(Token.Typography.title)
                 .multilineTextAlignment(.center)
             Text("Erişim izni verirsen kitaplığının tamamı aranabilir olur. Analiz cihazında "
                 + "yapılır; hiçbir veri gönderilmez.")
@@ -162,7 +175,7 @@ struct OnboardingFlow: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.green)
             Text("Hazırsın")
-                .font(.title2.bold())
+                .font(Token.Typography.display)
             Text("İndeksleme arka planda sürecek. Kitaplık dolmaya başlayacak; beklemene "
                 + "gerek yok.")
                 .font(.body)
@@ -183,8 +196,8 @@ struct OnboardingFlow: View {
             Button(primaryTitle) {
                 Task { await advance() }
             }
-            .buttonStyle(.borderedProminent)
-            .frame(minHeight: Token.minimumTapTarget)
+            .buttonStyle(.prominentAction)
+            .frame(maxWidth: step == .value ? .infinity : 220)
         }
     }
 

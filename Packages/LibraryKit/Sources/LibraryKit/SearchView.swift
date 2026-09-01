@@ -5,9 +5,22 @@ import SwiftUI
 /// Arama ekranı (02 §2.3).
 public struct SearchView: View {
     @State private var model: SearchViewModel
+    @Namespace private var transitionNamespace
 
     private let dependencies: LibraryDependencies
     private let paywall: PaywallPresenter
+
+    /// Boşta gösterilen başlangıç önerileri.
+    ///
+    /// Boş bir arama kutusu kullanıcıya ne yazabileceğini söylemez; doğal dil aramasının
+    /// varlığı ancak örnekle anlaşılır.
+    private static let starterSuggestions = [
+        "wifi şifresi",
+        "geçen ay fişler",
+        "yaklaşan biletler",
+        "kargo takip",
+        "IBAN",
+    ]
 
     public init(dependencies: LibraryDependencies, paywall: PaywallPresenter) {
         self.dependencies = dependencies
@@ -18,68 +31,45 @@ public struct SearchView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            filterChips
-            content
-        }
-        .navigationTitle("Ara")
-        .searchable(
-            text: $model.queryText,
-            prompt: "Doğal dilde sor: \"geçen ay 500 TL üstü fişler\""
-        )
-        .onSubmit(of: .search) {
-            Task { await model.submit() }
-        }
-    }
-
-    /// Modelin sorgudan **ne anladığı** görünür olmalı: sessizce uygulanan filtre,
-    /// kullanıcının anlamadığı boş sonuç demektir (02 §2.3).
-    @ViewBuilder
-    private var filterChips: some View {
-        if let intent = model.appliedIntent, intent.hasFilters {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Token.Space.sm) {
-                    if let category = intent.category {
-                        removableChip(
-                            title: "kategori: \(CategoryStyle.style(for: category).title)"
-                        ) {
-                            Task { await model.removeCategoryFilter() }
-                        }
-                    }
-                    if let range = intent.dateRange {
-                        removableChip(title: "tarih: \(Self.title(for: range))") {
-                            Task { await model.removeDateFilter() }
-                        }
-                    }
-                    if intent.minAmount != nil || intent.maxAmount != nil {
-                        removableChip(title: amountChipTitle(intent)) {
-                            Task { await model.removeAmountFilter() }
-                        }
-                    }
-                }
-                .padding(.horizontal, Token.Space.lg)
-                .padding(.vertical, Token.Space.sm)
+        content
+            .navigationTitle("Ara")
+            .navigationDestination(for: SearchResult.self) { result in
+                ShotDetailView(shot: result.shot, dependencies: dependencies, paywall: paywall)
+                    .navigationTransition(
+                        .zoom(sourceID: result.shot.assetIdentifier, in: transitionNamespace)
+                    )
             }
-        }
+            .searchable(
+                text: $model.queryText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Doğal dilde sor"
+            )
+            .onSubmit(of: .search) {
+                Task { await model.submit() }
+            }
+            .safeAreaInset(edge: .top, spacing: 0) { filterChips }
     }
 
     @ViewBuilder
     private var content: some View {
         switch model.state {
         case .idle:
-            StateView(
-                symbolName: "magnifyingglass",
-                title: "Ne arıyorsun?",
-                message: "\"otel wifi şifresi\", \"geçen ay kulaklık fişi\" gibi yazabilirsin."
-            )
+            suggestions
+
         case .searching:
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            ProgressView()
+                .controlSize(.large)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
         case .noResults:
             StateView(
-                symbolName: "questionmark.folder",
+                symbolName: "text.page.badge.magnifyingglass",
                 title: "Sonuç yok",
-                message: "Filtreleri kaldırmayı veya farklı kelimeler denemeyi dene."
+                message: model.appliedIntent?.hasFilters == true
+                    ? "Filtreleri kaldırmayı dene — yukarıdaki çiplere dokunarak."
+                    : "Farklı kelimeler deneyebilirsin."
             )
+
         case .quotaExceeded:
             StateView(
                 symbolName: "sparkles",
@@ -90,58 +80,155 @@ public struct SearchView: View {
             ) {
                 paywall.presentManually()
             }
+
         case let .results(results):
-            List(results) { result in
-                NavigationLink {
-                    ShotDetailView(
-                        shot: result.shot, dependencies: dependencies, paywall: paywall
+            resultList(results)
+        }
+    }
+
+    // MARK: - Öneriler
+
+    private var suggestions: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Token.Space.xl) {
+                suggestionSection(
+                    title: "Şunları deneyebilirsin",
+                    symbol: "sparkle.magnifyingglass",
+                    items: Self.starterSuggestions
+                )
+                if !model.recentQueries.isEmpty {
+                    suggestionSection(
+                        title: "Son aramaların",
+                        symbol: "clock.arrow.circlepath",
+                        items: model.recentQueries
                     )
-                } label: {
-                    resultRow(result)
                 }
             }
-            .listStyle(.plain)
+            .padding(Token.Space.lg)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func suggestionSection(
+        title: String,
+        symbol: String,
+        items: [String]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Token.Space.md) {
+            Label(title, systemImage: symbol)
+                .font(Token.Typography.headline)
+                .foregroundStyle(.secondary)
+
+            FlowLayout(spacing: Token.Space.sm) {
+                ForEach(items, id: \.self) { item in
+                    Button {
+                        Task { await model.apply(suggestion: item) }
+                    } label: {
+                        Text(item)
+                            .font(Token.Typography.callout)
+                            .padding(.horizontal, Token.Space.md)
+                            .padding(.vertical, Token.Space.sm)
+                            .background(.surface, in: Capsule(style: .continuous))
+                    }
+                    .buttonStyle(.pressable)
+                    .frame(minHeight: Token.minimumTapTarget)
+                }
+            }
         }
     }
 
-    private func resultRow(_ result: SearchResult) -> some View {
-        VStack(alignment: .leading, spacing: Token.Space.xs) {
-            HStack(spacing: Token.Space.sm) {
-                CategoryBadge(category: result.shot.analysis.category)
-                Text(result.shot.createdAt, format: .dateTime.day().month(.abbreviated).year())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    // MARK: - Filtre çipleri
+
+    /// Modelin sorgudan **ne anladığı** görünür olmalı: sessizce uygulanan filtre,
+    /// kullanıcının anlamadığı boş sonuç demektir (02 §2.3).
+    @ViewBuilder
+    private var filterChips: some View {
+        if let intent = model.appliedIntent, intent.hasFilters {
+            ScrollView(.horizontal) {
+                HStack(spacing: Token.Space.sm) {
+                    if let category = intent.category {
+                        removableChip(
+                            symbol: CategoryStyle.style(for: category).symbolName,
+                            title: CategoryStyle.style(for: category).title
+                        ) {
+                            Task { await model.removeCategoryFilter() }
+                        }
+                    }
+                    if let range = intent.dateRange {
+                        removableChip(symbol: "calendar", title: Self.title(for: range)) {
+                            Task { await model.removeDateFilter() }
+                        }
+                    }
+                    if intent.minAmount != nil || intent.maxAmount != nil {
+                        removableChip(
+                            symbol: "turkishlirasign.circle",
+                            title: amountChipTitle(intent)
+                        ) {
+                            Task { await model.removeAmountFilter() }
+                        }
+                    }
+                }
+                .padding(.horizontal, Token.Space.lg)
+                .padding(.vertical, Token.Space.sm)
             }
-            Text(result.shot.analysis.title.isEmpty ? "Başlıksız" : result.shot.analysis.title)
-                .font(.headline)
-            if !result.snippet.isEmpty {
-                Text(result.snippet)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+            .scrollIndicators(.hidden)
+            .background(.bar)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .animation(Token.Motion.standard, value: intent)
         }
-        .padding(.vertical, Token.Space.xs)
     }
 
-    private func removableChip(title: String, onRemove: @escaping () -> Void) -> some View {
+    private func removableChip(
+        symbol: String,
+        title: String,
+        onRemove: @escaping () -> Void
+    ) -> some View {
         Button(action: onRemove) {
             HStack(spacing: Token.Space.xs) {
-                Text(title).font(.caption)
-                Image(systemName: "xmark.circle.fill").imageScale(.small)
+                Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                Text(title).font(Token.Typography.caption)
+                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, Token.Space.md)
-            .padding(.vertical, Token.Space.sm)
-            .background(.surfaceStrong, in: Capsule())
+            .frame(minHeight: 32)
+            .background(Color.accentColor.opacity(0.16), in: Capsule(style: .continuous))
+            .foregroundStyle(Color.accentColor)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .frame(minHeight: Token.minimumTapTarget)
         .accessibilityLabel("\(title) filtresini kaldır")
     }
 
+    // MARK: - Sonuçlar
+
+    private func resultList(_ results: [SearchResult]) -> some View {
+        ScrollView {
+            LazyVStack(spacing: Token.Space.sm) {
+                ForEach(results) { result in
+                    NavigationLink(value: result) {
+                        SearchResultRow(result: result, image: model.image(for: result))
+                    }
+                    .buttonStyle(.pressableCard)
+                    .matchedTransitionSource(
+                        id: result.shot.assetIdentifier, in: transitionNamespace
+                    )
+                    .task(id: result.shot.assetIdentifier) {
+                        model.thumbnails.prefetch([result.shot.assetIdentifier])
+                    }
+                }
+            }
+            .padding(.horizontal, Token.Space.lg)
+            .padding(.vertical, Token.Space.sm)
+            .animation(Token.Motion.standard, value: results.map(\.id))
+        }
+        .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.immediately)
+    }
+
     private func amountChipTitle(_ intent: SearchIntent) -> String {
-        if let minimum = intent.minAmount { return "tutar: \(Int(minimum))+" }
-        if let maximum = intent.maxAmount { return "tutar: \(Int(maximum))-" }
+        if let minimum = intent.minAmount { return "\(Int(minimum))+ " }
+        if let maximum = intent.maxAmount { return "\(Int(maximum))-" }
         return "tutar"
     }
 

@@ -67,12 +67,43 @@ struct LibraryViewModelTests {
     @Test("Yalnız kitaplıkta bulunan kategoriler çip olarak gösterilir")
     func onlyPresentCategoriesAreOffered() async {
         // Boş kategoriye tıklayıp boş ekranla karşılaşmak kötü bir deneyimdir.
-        let index = FakeIndex(shots: [TestDependencies.shot(category: .receipt)])
+        let index = FakeIndex(shots: [
+            TestDependencies.shot(identifier: "a", category: .receipt),
+            TestDependencies.shot(identifier: "b", category: .receipt),
+            TestDependencies.shot(identifier: "c", category: .ticket),
+        ])
         let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
 
         await model.load()
 
-        #expect(model.availableCategories == [.receipt])
+        #expect(model.categoryCounts.map(\.category) == [.receipt, .ticket])
+        #expect(model.categoryCounts.map(\.count) == [2, 1])
+    }
+
+    @Test("Kategori çipleri TEK sorguyla hesaplanır")
+    func categoryCountsUseASingleQuery() async {
+        // Kategori başına ayrı sorgu 14 gidiş-dönüş eder ve her yenilemede tekrarlanır.
+        let index = FakeIndex(shots: [TestDependencies.shot()])
+        let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
+
+        await model.load()
+
+        #expect(await index.categoryCountRequests == 1)
+    }
+
+    @Test("Kayıtlar görününce önizlemeler toplu istenir")
+    func visibleCellsPrefetchThumbnails() async {
+        let shots = (0 ..< 5).map { TestDependencies.shot(identifier: "asset-\($0)") }
+        let index = FakeIndex(shots: shots)
+        let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
+        await model.load()
+
+        // Toplayıcı penceresi dolana kadar bekle.
+        try? await Task.sleep(for: .milliseconds(120))
+
+        let batches = await index.thumbnailBatchRequests
+        #expect(!batches.isEmpty)
+        #expect(batches.allSatisfy { $0.count > 1 || shots.count == 1 })
     }
 
     @Test("İndeks hatası hata durumuna düşürür")

@@ -1,4 +1,5 @@
 import AppFoundation
+import CoreGraphics
 import Foundation
 import ShotCore
 
@@ -26,12 +27,28 @@ public final class SearchViewModel {
     /// Ayrıştırılan filtreler; kullanıcıya çip olarak gösterilir ve kaldırılabilir.
     public private(set) var appliedIntent: SearchIntent?
     public private(set) var isParsing = false
+    /// Boşta ekranda gösterilen son aramalar (en yeniden eskiye, en fazla 6).
+    ///
+    /// Bellekte tutulur, diske yazılmaz: arama sorguları kullanıcının ne aradığını
+    /// ele verir ve `UserDefaults` yedeklemeye girer (07 §4).
+    public private(set) var recentQueries: [String] = []
+
+    /// Sonuç satırlarındaki önizlemeler. Kitaplıkla aynı toplayıcı/önbellek mantığı:
+    /// sonuç listesi de hızlı kaydırılır ve aynı takılma riskini taşır.
+    public let thumbnails: ThumbnailStore
 
     private let dependencies: LibraryDependencies
     private let paywall: PaywallPresenter
     private let dateProvider: any DateProviding
     private var instantSearchTask: Task<Void, Never>?
 
+    /// Anlık (anahtar kelime) arama için beklenen duraklama.
+    ///
+    /// Her tuş vuruşunda indekse gitmek, hızlı yazan kullanıcıda saniyede 8-10 arama
+    /// demektir; her biri sonuç listesini baştan kurar ve yazarken gözle görülür takılma
+    /// yaratır. 140 ms iki tuş arasına sığmayacak kadar kısa, gecikme hissettirmeyecek
+    /// kadar da uzundur.
+    private let instantDebounce: Duration = .milliseconds(140)
     /// Doğal dil ayrıştırması için beklenen duraklama. 400 ms, kullanıcının yazmayı
     /// bitirdiğini anlamaya yeter ama gecikme olarak hissedilmez.
     private let parseDebounce: Duration = .milliseconds(400)
@@ -44,6 +61,11 @@ public final class SearchViewModel {
         self.dependencies = dependencies
         self.paywall = paywall
         self.dateProvider = dateProvider
+        thumbnails = ThumbnailStore(index: dependencies.index)
+    }
+
+    public func image(for result: SearchResult) -> CGImage? {
+        thumbnails.image(for: result.shot.assetIdentifier)
     }
 
     // MARK: - Anlık arama
@@ -62,8 +84,12 @@ public final class SearchViewModel {
             // Görev sıraya girdikten sonra kullanıcı Enter'a basmış olabilir; o durumda
             // submit() bu görevi iptal eder ve buradan hiç devam edilmemelidir.
             guard let self, !Task.isCancelled else { return }
-            // Ham metinle hemen ara: model beklenmeden ilk sonuçlar görünür.
+
+            try? await Task.sleep(for: instantDebounce)
+            guard !Task.isCancelled else { return }
+            // Ham metinle ara: model beklenmeden ilk sonuçlar görünür.
             await run(intent: .plain(text))
+
             try? await Task.sleep(for: parseDebounce)
             guard !Task.isCancelled else { return }
             await parseAndSearch(text)
@@ -83,6 +109,7 @@ public final class SearchViewModel {
     private func parseAndSearch(_ text: String) async {
         isParsing = true
         defer { isParsing = false }
+        remember(text)
 
         let intent = await dependencies.analyzer.parseSearchIntent(text)
 
@@ -106,6 +133,9 @@ public final class SearchViewModel {
         do {
             let results = try await dependencies.index.search(query)
             state = results.isEmpty ? .noResults : .results(results)
+            // İlk ekran dolusu önizleme hemen istenir; kullanıcı listeyi görür görmez
+            // görseller yerine oturur.
+            thumbnails.prefetch(results.prefix(12).map(\.shot.assetIdentifier))
         } catch {
             Log.error(.search, "Arama başarısız", error: error)
             state = .noResults
@@ -152,6 +182,21 @@ public final class SearchViewModel {
                 maxAmount: nil
             )
         )
+    }
+
+    /// Sorguyu son aramalara ekler (tekrarları öne taşır).
+    private func remember(_ query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return }
+        recentQueries.removeAll { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
+        recentQueries.insert(trimmed, at: 0)
+        if recentQueries.count > 6 { recentQueries.removeLast(recentQueries.count - 6) }
+    }
+
+    /// Öneri veya son aramaya dokunulduğunda.
+    public func apply(suggestion: String) async {
+        queryText = suggestion
+        await submit()
     }
 
     public func clear() {

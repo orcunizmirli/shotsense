@@ -50,21 +50,41 @@ public struct SettingsView: View {
 
     private var subscriptionSection: some View {
         Section("Abonelik") {
-            HStack {
-                Text(entitlement.isPro ? "Pro" : "Ücretsiz")
-                Spacer()
-                if !entitlement.isPro {
-                    Button("Pro'ya geç") { paywall.presentManually() }
+            if entitlement.isPro {
+                HStack(spacing: Token.Space.md) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(.tint)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("ShotSense Pro").font(Token.Typography.headline)
+                        Text("Sınırsız indeksleme ve arama")
+                            .font(Token.Typography.micro)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            }
-            .frame(minHeight: Token.minimumTapTarget)
-
-            if !entitlement.isPro {
-                Text("Ücretsiz sürümde en yeni \(FreeTierLimits.indexedShotCount) ekran görüntüsü "
-                    + "indekslenir, ayda \(FreeTierLimits.naturalLanguageSearchesPerMonth) akıllı "
-                    + "arama yapabilirsin.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .frame(minHeight: Token.minimumTapTarget)
+            } else {
+                Button {
+                    paywall.presentManually()
+                } label: {
+                    HStack(spacing: Token.Space.md) {
+                        Image(systemName: "sparkles").foregroundStyle(.tint)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Pro'ya geç").font(Token.Typography.headline)
+                            Text("En yeni \(FreeTierLimits.indexedShotCount) yerine tümü, "
+                                + "sınırsız akıllı arama")
+                                .font(Token.Typography.micro)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.quaternary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.pressable)
+                .frame(minHeight: Token.minimumTapTarget)
             }
         }
     }

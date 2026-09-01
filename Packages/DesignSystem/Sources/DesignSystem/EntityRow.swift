@@ -13,6 +13,7 @@ public struct EntityRow: View {
     private let onAction: ((ExtractedEntity) -> Void)?
 
     @State private var isRevealed = false
+    @State private var didCopy = false
 
     public init(
         entity: ExtractedEntity,
@@ -26,53 +27,88 @@ public struct EntityRow: View {
 
     public var body: some View {
         HStack(spacing: Token.Space.md) {
-            Image(systemName: Self.symbolName(for: entity.kind))
-                .frame(width: 24)
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(Self.title(for: entity.kind))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(displayValue)
-                    .font(.body.monospacedDigit())
-                    .textSelection(.enabled)
-            }
-
+            icon
+            labels
             Spacer(minLength: Token.Space.sm)
+            controls
+        }
+        .padding(.vertical, Token.Space.sm)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+    }
 
+    private var icon: some View {
+        Image(systemName: Self.symbolName(for: entity.kind))
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.tint)
+            .frame(width: 34, height: 34)
+            .background(Color.accentColor.opacity(0.12), in: Circle())
+    }
+
+    private var labels: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(Self.title(for: entity.kind))
+                .font(Token.Typography.micro)
+                .foregroundStyle(.secondary)
+            Text(displayValue)
+                .font(Token.Typography.numeric)
+                .textSelection(.enabled)
+                .lineLimit(2)
+                // Maskeden açığa geçiş ani olmaz: değerin değiştiği fark edilir.
+                .contentTransition(.opacity)
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: Token.Space.xs) {
             if entity.kind.isSensitive {
-                Button {
-                    isRevealed.toggle()
-                } label: {
-                    Image(systemName: isRevealed ? "eye.slash" : "eye")
+                iconButton(
+                    systemName: isRevealed ? "eye.slash" : "eye",
+                    label: isRevealed ? "Gizle" : "Göster"
+                ) {
+                    withAnimation(Token.Motion.quick) { isRevealed.toggle() }
                 }
-                .buttonStyle(.borderless)
-                .frame(minWidth: Token.minimumTapTarget, minHeight: Token.minimumTapTarget)
-                .accessibilityLabel(isRevealed ? "Gizle" : "Göster")
             }
 
-            Button {
+            iconButton(
+                systemName: didCopy ? "checkmark" : "doc.on.doc",
+                label: "Kopyala",
+                tint: didCopy ? .green : .secondary
+            ) {
                 onCopy(entity.rawValue)
-            } label: {
-                Image(systemName: "doc.on.doc")
+                withAnimation(Token.Motion.quick) { didCopy = true }
             }
-            .buttonStyle(.borderless)
-            .frame(minWidth: Token.minimumTapTarget, minHeight: Token.minimumTapTarget)
-            .accessibilityLabel("Kopyala")
+            // Onay işareti kalıcı olmaz: kısa bir doğrulama sonrası eski hâline döner.
+            .task(id: didCopy) {
+                guard didCopy else { return }
+                try? await Task.sleep(for: .seconds(1.6))
+                withAnimation(Token.Motion.standard) { didCopy = false }
+            }
+            .sensoryFeedback(.success, trigger: didCopy)
 
             if entity.kind.isActionable, let onAction {
-                Button {
+                iconButton(systemName: "arrow.up.forward", label: "Aksiyona çevir") {
                     onAction(entity)
-                } label: {
-                    Image(systemName: "arrow.up.forward.app")
                 }
-                .buttonStyle(.borderless)
-                .frame(minWidth: Token.minimumTapTarget, minHeight: Token.minimumTapTarget)
-                .accessibilityLabel("Aksiyona çevir")
             }
         }
-        .padding(.vertical, Token.Space.xs)
+    }
+
+    private func iconButton(
+        systemName: String,
+        label: String,
+        tint: Color = .secondary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: Token.minimumTapTarget, height: Token.minimumTapTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel(label)
     }
 
     private var displayValue: String {

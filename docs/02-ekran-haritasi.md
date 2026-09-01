@@ -77,7 +77,48 @@ Tetikleyiciler: (a) 200. screenshot sonrası kitaplık, (b) 11. arama, (c) 4. ak
 | Sonuç var | İçerik |
 | Hata | Kısa neden + "Tekrar dene" |
 
-## 4. Erişilebilirlik kuralları
+## 4. Akıcılık kuralları (premium his)
+
+Premium algı iki şeyden doğar: **hiç takılmama** ve **tutarlı hareket**. İkisi de
+mimariyle korunur, "sonra iyileştiririz" ile değil.
+
+### 4.1 Kaydırma bütçesi
+
+| Kural | Gerekçe |
+|---|---|
+| Önizlemeler **toplu** okunur (`ShotIndexing.thumbnails(for:)`) | Hücre başına ayrı okuma, veri deposu aktörüne görünen hücre kadar gidiş-dönüş demektir; hepsi sıraya girer |
+| Çözme **arka planda ve görüntüleme boyutunda** | 1290×2796 bir görsel tam boyutta 14 MB bitmap üretir; 30 hücre 400 MB'ı aşar |
+| İstekler 30 ms'lik pencerede toplanır | Bir kaydırma darbesi onlarca hücre açar; hepsi tek partiye iner |
+| 15 hücre ileriye **ön yükleme** | Kullanıcı oraya varmadan görsel hazırdır; boş kare görülmez |
+| LRU tavanı 150 görsel (~35 MB) | Sınırsız önbellek arka plandaki uygulamayı sonlandırır |
+| `View.body` içinden çağrılan fonksiyonlar **yan etkisiz** | İş başlatan bir okuma, her yeniden çizimde yeni görev doğurur |
+| Kategori çipleri **tek sorgu** | Kategori başına sorgu 14 gidiş-dönüş eder ve her yenilemede tekrarlanır |
+| İndeksleme sırasında ızgara **en fazla 2 sn'de bir** tazelenir | Her partide yenilemek ızgarayı saniyede birkaç kez baştan kurar |
+| Aramada 140 ms debounce | Hızlı yazan kullanıcıda saniyede 8-10 arama, her biri listeyi baştan kurar |
+| Hücreler **sabit oranlı** (9:16) | Değişken yükseklik `LazyVGrid`'i her yüklemede yeniden ölçmeye zorlar |
+| Gölgeler `compositingGroup` sonrası | Aksi hâlde her alt katman için ayrı hesaplanır |
+
+### 4.2 Hareket
+
+- Tüm animasyonlar **yay** tabanlıdır (`Token.Motion`), süre tabanlı değil: kesintiye
+  uğradığında hızını koruyarak yeni hedefe yönelir, zıplamaz.
+- Izgaradan detaya **zoom geçişi** (`.navigationTransition(.zoom)`): kullanıcı hangi
+  öğeye girdiğini ve geri dönüş yönünü kaybetmez.
+- Seçim vurgusu çipler arasında **kayar** (`matchedGeometryEffect`), anlık değişmez.
+- Sayılar `contentTransition(.numericText())` ile geçer.
+- Her dokunulabilir yüzey basıldığında küçülür (`PressableButtonStyle`); yanıt vermeyen
+  yüzey "dokunma algılanmadı" hissi verir.
+- **Hareketi Azalt** açıkken tüm bunlar kapanır (`Token.Motion.respectingReduceMotion`);
+  parıltı gibi sürekli tekrarlı efektler hiç başlamaz.
+- Haptik geri bildirim `.sensoryFeedback` ile verilir (UIKit gerektirmez, R6).
+
+### 4.3 Yükleme
+
+- Boş ekran yerine **iskelet + parıltı**; ızgara yüksekliği baştan doğru.
+- Detayda **aşamalı yükleme**: önce önizleme, sonra tam görsel.
+- Görseller belirerek gelir, "pop" yapmaz.
+
+## 5. Erişilebilirlik kuralları
 - Tüm dokunma hedefleri ≥ 44×44 pt.
 - Her thumbnail'in `accessibilityLabel`'ı = LLM başlığı + kategori + tarih.
 - Dynamic Type XXL'de grid 3→2→1 sütuna düşer.

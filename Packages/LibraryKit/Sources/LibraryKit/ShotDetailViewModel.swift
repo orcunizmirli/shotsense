@@ -1,4 +1,6 @@
 import AppFoundation
+import CoreGraphics
+import DesignSystem
 import Foundation
 import ShotCore
 
@@ -7,8 +9,10 @@ import ShotCore
 @Observable
 public final class ShotDetailViewModel {
     public private(set) var shot: Shot
-    public private(set) var thumbnailData: Data?
-    public private(set) var fullImageData: Data?
+    /// Önce önizleme, sonra tam görsel gösterilir: kullanıcı ekran açılır açılmaz bir şey
+    /// görür ve tam görsel geldiğinde yerine geçer (aşamalı yükleme).
+    public private(set) var previewImage: CGImage?
+    public private(set) var heroImage: CGImage?
     /// Kullanıcıya gösterilecek geçici geri bildirim ("Hatırlatıcı oluşturuldu").
     public private(set) var toast: String?
     public private(set) var errorMessage: String?
@@ -32,12 +36,24 @@ public final class ShotDetailViewModel {
         entities.compactMap(\.dateValue).min()
     }
 
+    /// Gösterilecek görsel: tam görsel hazırsa o, değilse önizleme.
+    public var displayImage: CGImage? { heroImage ?? previewImage }
+
     public func load() async {
-        thumbnailData = try? await dependencies.index.thumbnail(for: shot.assetIdentifier)
-        fullImageData = try? await dependencies.source.imageData(
-            for: shot.assetIdentifier, maxPixelSize: 1600
-        )
+        if let data = try? await dependencies.index.thumbnail(for: shot.assetIdentifier) {
+            previewImage = await ImageDecoding.decodeInBackground(data, maxPixelSize: 400)
+        }
+        guard let full = try? await dependencies.source.imageData(
+            for: shot.assetIdentifier, maxPixelSize: Self.heroPixelSize
+        ) else { return }
+        heroImage = await ImageDecoding.decodeInBackground(full, maxPixelSize: Self.heroPixelSize)
     }
+
+    /// Detay ve tam ekran inceleyici için çözünürlük.
+    ///
+    /// Yakınlaştırma yapıldığı için önizleme boyutu yetmez; tam çözünürlük ise 14 MB'lık
+    /// bitmap demektir. 2000 px, 6x yakınlaştırmada bile küçük punto metni okunur kılar.
+    static let heroPixelSize = 2000
 
     // MARK: - Aksiyonlar
 
@@ -116,6 +132,48 @@ public final class ShotDetailViewModel {
             toast = "Kategori güncellendi"
         } catch {
             report(error, fallback: "Güncellenemedi")
+        }
+    }
+
+    /// Satır içi geri bildirim ("Kopyalandı").
+    public func showToast(_ message: String) {
+        toast = message
+    }
+
+    /// Varlık türüne göre açılacak sistem bağlantısı.
+    ///
+    /// Bağlantı açmak arayüz katmanının işidir (`openURL`), bu yüzden model yalnız
+    /// **hangi** adresin açılacağını söyler; açma işini görünüm yapar.
+    public func actionURL(for entity: ExtractedEntity) -> URL? {
+        switch entity.kind {
+        case .url:
+            return URL(string: entity.normalizedValue)
+        case .phone:
+            return URL(string: "tel://" + entity.normalizedValue.filter { $0.isNumber || $0 == "+" })
+        case .email:
+            return URL(string: "mailto:" + entity.normalizedValue)
+        case .address:
+            let query = entity.rawValue
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            return URL(string: "http://maps.apple.com/?q=" + query)
+        case .trackingNumber, .flightNumber, .date, .amount, .merchant, .iban,
+             .wifiSSID, .wifiPassword, .code, .person:
+            return nil
+        }
+    }
+
+    /// Bağlantısı olmayan aksiyona çevrilebilir türler (tarih) için işlem.
+    public func performAction(for entity: ExtractedEntity) async {
+        switch entity.kind {
+        case .date:
+            await createReminder()
+        case .trackingNumber, .flightNumber:
+            // Takip/uçuş numarası için doğrulanmış bir derin bağlantı yok; kullanıcının
+            // kendi uygulamasına yapıştırabilmesi en güvenilir yol.
+            showToast("Kopyalayıp takip uygulamanda kullanabilirsin")
+        case .url, .phone, .email, .address, .amount, .merchant, .iban,
+             .wifiSSID, .wifiPassword, .code, .person:
+            break
         }
     }
 
