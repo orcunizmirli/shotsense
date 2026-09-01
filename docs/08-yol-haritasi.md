@@ -53,7 +53,7 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-044 | `SettingsView` + zekâ durumu + indeksi sıfırla | 0.5 |
 | SS-045 | Erişilebilirlik geçişi (VoiceOver, Dynamic Type, 44pt) | 0.5 |
 
-## M5 — Aksiyon + para (3 gün)
+## M5 — Aksiyon + para (3 gün) ✅
 
 | ID | Task | Tahmin |
 |---|---|---|
@@ -62,13 +62,13 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-052 | `QuotaLedger` + paywall tetikleyicileri + frekans kapağı | 0.5 |
 | SS-053 | `PaywallView` (fiyat, deneme, restore, linkler) | 0.5 |
 
-## M6 — Onboarding + cila (3 gün)
+## M6 — Onboarding + cila (3 gün) — kısmen ✅
 
 | ID | Task | Tahmin |
 |---|---|---|
 | SS-060 | `OnboardingFlow` 4 adım (değer → örnek → izin → indeksleme) | 1.5 |
-| SS-061 | Boş/hata durumları, ilk çalıştırma performansı | 0.5 |
-| SS-062 | App Store materyali (ekran görüntüleri, metin, gizlilik beyanı) | 1 |
+| SS-061 | Boş/hata durumları ✅, ilk çalıştırma performans ölçümü (cihaz gerekli) | 0.5 |
+| SS-062 | App Store materyali (ekran görüntüleri, metin, gizlilik beyanı) — cihaz/hesap gerekli | 1 |
 
 **v1.0 toplam ≈ 24 gün.**
 

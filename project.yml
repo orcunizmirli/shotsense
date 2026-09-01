@@ -23,6 +23,8 @@ packages:
   IndexKit:        { path: Packages/IndexKit }
   DesignSystem:    { path: Packages/DesignSystem }
   LibraryKit:      { path: Packages/LibraryKit }
+  ActionKit:       { path: Packages/ActionKit }
+  PaywallKit:      { path: Packages/PaywallKit }
 
 targets:
   ShotSenseApp:
@@ -40,6 +42,8 @@ targets:
       - { package: IndexKit }
       - { package: DesignSystem }
       - { package: LibraryKit }
+      - { package: ActionKit }
+      - { package: PaywallKit }
     info:
       path: App/Info.plist
       properties:

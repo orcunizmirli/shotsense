@@ -137,6 +137,18 @@ for scanRoot in scanRoots {
         guard let contents = try? String(contentsOfFile: file, encoding: .utf8) else { continue }
         let package = packageName(for: file)
 
+        // Gerekçeli muafiyet: dosya `// dependency-lint:allow <RuleID> — sebep` satırı
+        // taşıyorsa o kural bu dosyada uygulanmaz. Kaçış yolu **görünür ve gerekçeli**
+        // olmalıdır; sessizce kural gevşetmektense muafiyeti kodda okunur kılmak yeğdir.
+        var allowedRules = Set<String>()
+        for line in contents.components(separatedBy: .newlines) {
+            guard let range = line.range(of: "dependency-lint:allow ") else { continue }
+            let remainder = line[range.upperBound...]
+            if let ruleID = remainder.split(separator: " ").first {
+                allowedRules.insert(String(ruleID))
+            }
+        }
+
         for (index, line) in contents.components(separatedBy: .newlines).enumerated() {
             let lineNumber = index + 1
             let code = line.split(separator: "/").first.map(String.init) ?? line
@@ -144,7 +156,7 @@ for scanRoot in scanRoots {
 
             for rule in rules {
                 let applies = rule.packages.isEmpty || rule.packages.contains(package)
-                guard applies else { continue }
+                guard applies, !allowedRules.contains(rule.id) else { continue }
 
                 if let module = importedModule(in: line), rule.forbiddenImports.contains(module) {
                     violations.append(
