@@ -44,7 +44,11 @@ public struct ImageViewer: View {
             }
         }
         .overlay(alignment: .topTrailing) { closeButton }
+        // Durum çubuğu yalnız iOS'ta gizlenir; macOS'ta böyle bir kavram yok ve API
+        // orada kullanılamaz olarak işaretli. Paket macOS'ta da derlensin diye ayrılır.
+        #if os(iOS)
         .statusBarHidden()
+        #endif
         .accessibilityAction(named: "Kapat", onDismiss)
     }
 

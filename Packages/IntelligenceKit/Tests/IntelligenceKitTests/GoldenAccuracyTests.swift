@@ -38,7 +38,8 @@ struct GoldenAccuracyTests {
     func everyDisplayedEntityIsGrounded(_ entry: GoldenCorpus.Entry) {
         // KANON §6: gösterilen hiçbir değer uydurulmuş olamaz.
         let analysis = analyzer.analyzeSynchronously(GoldenCorpus.document(for: entry))
-        #expect(analysis.displayableEntities.allSatisfy(\.isGrounded))
+        let allSatisfyCheck = analysis.displayableEntities.allSatisfy(\.isGrounded)
+        #expect(allSatisfyCheck)
     }
 }
 

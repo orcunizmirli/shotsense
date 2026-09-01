@@ -10,9 +10,11 @@ import Vision
 /// olduğundan, Xcode ile ilk derlemede uyarlama gerekirse değişiklik buraya sınırlı kalır.
 /// `VisionTextRecognizer` bu yol tamamen başarısız olsa bile metin ve barkod üretmeye devam eder.
 enum VisionDocumentMapper {
-    static func structure(in imageData: Data, languages: [String]) async -> DocumentStructure {
-        var request = RecognizeDocumentsRequest()
-        request.recognitionLanguages = languages.map { Locale.Language(identifier: $0) }
+    /// - Note: `RecognizeDocumentsRequest` dil yapılandırması **kabul etmez**; dili kendisi
+    ///   saptar. Dil ipucu yalnız `RecognizeTextRequest` tarafında verilir ve metin oradan
+    ///   gelir — burada üretilen tek şey tablo/liste yapısıdır.
+    static func structure(in imageData: Data) async -> DocumentStructure {
+        let request = RecognizeDocumentsRequest()
 
         do {
             let observations = try await request.perform(on: imageData)

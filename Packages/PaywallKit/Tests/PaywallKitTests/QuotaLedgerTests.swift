@@ -8,15 +8,23 @@ import Testing
 @Suite("QuotaLedger")
 struct QuotaLedgerTests {
     /// Her test kendi UserDefaults alanını kullanır; testler birbirinin sayacını görmemeli.
-    private func makeDefaults() throws -> UserDefaults {
-        let suiteName = "quota-test-" + UUID().uuidString
-        return try #require(UserDefaults(suiteName: suiteName))
+    private func makeSuiteName() -> String {
+        "quota-test-" + UUID().uuidString
+    }
+
+    /// Aynı alana bağlı **yeni** bir `UserDefaults` örneği verir.
+    ///
+    /// Tek bir örneği iki aktöre geçirmek Swift 6'da veri yarışı riski sayılır
+    /// (`UserDefaults` `Sendable` değildir). Aynı `suiteName` ile ayrı örnekler almak
+    /// altta yatan aynı depoyu paylaşır — testin kastettiği de budur.
+    private func makeDefaults(suite: String) throws -> UserDefaults {
+        try #require(UserDefaults(suiteName: suite))
     }
 
     @Test("Free kullanıcı aylık sınıra kadar tüketir")
     func freeUserConsumesUpToLimit() async throws {
         let ledger = QuotaLedger(
-            defaults: try makeDefaults(),
+            defaults: try makeDefaults(suite: makeSuiteName()),
             dateProvider: MutableDateProvider(),
             entitlements: FakeEntitlementProvider(entitlement: .free)
         )
@@ -31,7 +39,7 @@ struct QuotaLedgerTests {
     @Test("Pro kullanıcıda sınır yok")
     func proUserIsUnlimited() async throws {
         let ledger = QuotaLedger(
-            defaults: try makeDefaults(),
+            defaults: try makeDefaults(suite: makeSuiteName()),
             dateProvider: MutableDateProvider(),
             entitlements: FakeEntitlementProvider(entitlement: Entitlement(tier: .pro))
         )
@@ -45,17 +53,17 @@ struct QuotaLedgerTests {
     @Test("Pro kullanıcıda sayaç artmaz")
     func proUsageDoesNotAccumulate() async throws {
         // Abonelik biterse eski aylardan devreden bir "borç" oluşmamalı.
-        let defaults = try makeDefaults()
+        let suite = makeSuiteName()
         let clock = MutableDateProvider()
         let proLedger = QuotaLedger(
-            defaults: defaults,
+            defaults: try makeDefaults(suite: suite),
             dateProvider: clock,
             entitlements: FakeEntitlementProvider(entitlement: Entitlement(tier: .pro))
         )
         for _ in 0 ..< 10 { _ = await proLedger.consume(.action) }
 
         let freeLedger = QuotaLedger(
-            defaults: defaults,
+            defaults: try makeDefaults(suite: suite),
             dateProvider: clock,
             entitlements: FakeEntitlementProvider(entitlement: .free)
         )
@@ -66,7 +74,7 @@ struct QuotaLedgerTests {
     func quotaResetsNextMonth() async throws {
         let clock = MutableDateProvider(now: Date(timeIntervalSince1970: 1_767_225_600))
         let ledger = QuotaLedger(
-            defaults: try makeDefaults(),
+            defaults: try makeDefaults(suite: makeSuiteName()),
             dateProvider: clock,
             entitlements: FakeEntitlementProvider(entitlement: .free)
         )
@@ -81,7 +89,7 @@ struct QuotaLedgerTests {
     @Test("Yetenekler birbirinin kotasını tüketmez")
     func capabilitiesAreIndependent() async throws {
         let ledger = QuotaLedger(
-            defaults: try makeDefaults(),
+            defaults: try makeDefaults(suite: makeSuiteName()),
             dateProvider: MutableDateProvider(),
             entitlements: FakeEntitlementProvider(entitlement: .free)
         )

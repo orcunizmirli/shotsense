@@ -30,9 +30,12 @@ public actor HybridIndex: ShotIndexing {
     private var documents: [String: IndexedDocument] = [:]
     private var isWarm = false
 
-    public init(store: ShotStore, embeddings: EmbeddingProvider = EmbeddingProvider()) {
+    /// Vektör sağlayıcı dışarıdan alınmaz, burada kurulur: `NLEmbedding` `Sendable`
+    /// olmadığı için aktör sınırından geçirilemez ve geçirilmesine de gerek yoktur —
+    /// yapılandırması yoktur, testler statik yardımcılarını doğrudan kullanır.
+    public init(store: ShotStore) {
         self.store = store
-        self.embeddings = embeddings
+        embeddings = EmbeddingProvider()
     }
 
     /// Kalıcı depodan bellek-içi indeksi kurar. Uygulama açılışında bir kez çağrılır.

@@ -6,15 +6,22 @@ import Foundation
 public enum TextNormalizer {
     /// Aksan ve büyük/küçük harf duyarsız karşılaştırma biçimi.
     ///
-    /// Türkçe `I/ı/İ/i` çiftleri `Locale` verilmeden yanlış katlanır; bu yüzden katlama
-    /// açıkça Türkçe yerelinde yapılır ve sonuç ayrıca `precomposedStringWithCanonicalMapping`
-    /// ile normalize edilir (OCR bazen ayrık birleştirici işaret üretir).
+    /// **Türkçe I sorunu:** `MİGROS` ile `migros` eşleşmelidir, ama hiçbir yerel bunu tek
+    /// başına vermez. Türkçe yerelinde katlama `İ`'yi önce `I`'ya indirger, sonra Türkçe
+    /// kuralıyla `ı` yapar → `mıgros`; kök yerelinde ise `ı` ile `i` ayrışır. Bu yüzden
+    /// noktalı/noktasız I varyantları **katlamadan önce** tek biçime indirgenir ve katlama
+    /// yerelden bağımsız yapılır.
+    ///
+    /// Bu bir dil kuralı değil, **arama eşleştirme** kuralıdır: amaç doğru Türkçe küçük harf
+    /// üretmek değil, kullanıcının yazdığıyla ekrandakini buluşturmaktır.
     public static func fold(_ value: String) -> String {
         value
             .precomposedStringWithCanonicalMapping
+            .replacingOccurrences(of: "İ", with: "I")
+            .replacingOccurrences(of: "ı", with: "i")
             .folding(
                 options: [.diacriticInsensitive, .caseInsensitive, .widthInsensitive],
-                locale: Locale(identifier: "tr_TR")
+                locale: nil
             )
     }
 

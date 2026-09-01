@@ -8,7 +8,12 @@ import NaturalLanguage
 /// **Neden `NLEmbedding`:** Foundation Models embedding API'si sunmaz, `NaturalLanguage`
 /// ise cihazda hazır, ücretsiz ve modelsiz cihazlarda zarifçe `nil` döner. Vektör yoksa
 /// arama bozulmaz; hibrit skorda anlamsal bileşenin ağırlığı terim bileşenine devredilir.
-public struct EmbeddingProvider: Sendable {
+///
+/// **`Sendable` değildir — bilinçli.** `NLEmbedding` bir sınıf ve `Sendable` değil; onu
+/// `@unchecked Sendable` ile sarmalamak, belgelenmemiş bir thread-safety varsayımını
+/// derleyiciden gizlemek olurdu. Bunun yerine tip `HybridIndex` aktörünün **içinde**
+/// yaşar: izolasyonu aktör sağlar, varsayıma gerek kalmaz.
+public struct EmbeddingProvider {
     private let embeddings: [NLEmbedding]
 
     /// - Parameter languages: sırayla denenir; ilk yüklenebilen kullanılır.

@@ -25,7 +25,7 @@ public struct VisionTextRecognizer: TextRecognizing {
 
         async let blocks = recognizeTextBlocks(in: imageData, languages: requestedLanguages)
         async let barcodes = recognizeBarcodes(in: imageData)
-        async let structure = recognizeStructure(in: imageData, languages: requestedLanguages)
+        async let structure = recognizeStructure(in: imageData)
 
         let (textBlocks, barcodeResults, structureResult) = await (blocks, barcodes, structure)
 
@@ -114,12 +114,9 @@ public struct VisionTextRecognizer: TextRecognizing {
 
     // MARK: - Yapı
 
-    private func recognizeStructure(
-        in imageData: Data,
-        languages: [String]
-    ) async -> DocumentStructure {
+    private func recognizeStructure(in imageData: Data) async -> DocumentStructure {
         guard configuration.usesDocumentStructure else { return .empty }
-        return await VisionDocumentMapper.structure(in: imageData, languages: languages)
+        return await VisionDocumentMapper.structure(in: imageData)
     }
 }
 

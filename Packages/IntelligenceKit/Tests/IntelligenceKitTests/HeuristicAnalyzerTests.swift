@@ -39,7 +39,8 @@ struct HeuristicAnalyzerTests {
             document("IBAN: TR33 0006 1005 1978 6457 8413 26\nTutar: 250,00 TL")
         )
         #expect(!analysis.displayableEntities.isEmpty)
-        #expect(analysis.displayableEntities.allSatisfy(\.isGrounded))
+        let allSatisfyCheck = analysis.displayableEntities.allSatisfy(\.isGrounded)
+        #expect(allSatisfyCheck)
     }
 
     @Test("Özet tek kelimelik satırları atlar")
