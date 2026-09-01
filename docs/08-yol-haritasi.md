@@ -72,6 +72,25 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 
 **v1.0 toplam ≈ 24 gün.**
 
+## M7 — Akıcılık ve premium arayüz ✅
+
+Kullanıcı isteği üzerine M4'ün üstüne eklendi: arayüz kalitesi ve takılmama bir "cila"
+maddesi değil, ürünün abonelik satan yüzü.
+
+| ID | Task | Tahmin |
+|---|---|---|
+| SS-070 | `ThumbnailStore`: toplu okuma + arka planda çözme + LRU + ön yükleme | 1 |
+| SS-071 | `ShotIndexing.thumbnails(for:)` ve `categoryCounts()` portları | 0.5 |
+| SS-072 | Hareket/tipografi/yüzey belirteçleri, basılabilir düğme stilleri | 0.5 |
+| SS-073 | Zoom geçişi, kayan çip seçimi, iskelet+parıltı, aşamalı görsel yükleme | 1 |
+| SS-074 | `ImageViewer` (kıstırarak yakınlaştırma, sürükleyerek kapatma) | 0.5 |
+| SS-075 | Arama debounce + öneri/son aramalar; sonuç satırlarında önizleme | 0.5 |
+| SS-076 | Paywall görsel yükseltmesi | 0.5 |
+| SS-077 | Performans regresyon testleri (toplu okuma, LRU, yan etkisiz okuma) | 0.5 |
+
+Bütçeler ve gerekçeleri `02-ekran-haritasi.md` §4'te; testler `ThumbnailStoreTests` ve
+`LibraryViewModelTests` içinde kilitli.
+
 ## v1.1 (sonraki)
 Share Extension · App Intents/Shortcuts/Siri · Widget · Spotlight · yinelenen tespiti +
 temizlik asistanı · manuel koleksiyon · dışa aktarma · lifetime ürünü.

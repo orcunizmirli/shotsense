@@ -37,9 +37,11 @@ aranabilir yapan ve aksiyona çeviren SwiftUI uygulaması.
 | M4 | DesignSystem, LibraryKit (kitaplık / arama / detay / ayarlar / paywall) | ✅ |
 | M5 | ActionKit (EventKit), PaywallKit (StoreKit 2), kota sayacı | ✅ |
 | M6 | Onboarding, arka plan indeksleme, kompozisyon kökü | ✅ |
+| M7 | Akıcılık katmanı ve premium arayüz (bkz. [02 §4](docs/02-ekran-haritasi.md)) | ✅ |
 
-> **Not:** kod bu depoda Xcode olmadan yazıldı; ilk `xcodegen generate && xcodebuild` turunda
-> derleyici uyarlaması gerekebilir. En yeni API yüzeyi olan Vision belge-konteyner eşlemesi
+> **Not:** kod bu depoda Xcode olmadan yazıldı ve CI turlarıyla adım adım doğrulanıyor.
+> Şimdiye kadar çıkan derleme sorunları: `swift-tools-version` (`.v26` tools 6.2 gerektiriyor)
+> ve paylaşılan `ISO8601DateFormatter` (Swift 6'da `Sendable` değil). İkisi de giderildi. En yeni API yüzeyi olan Vision belge-konteyner eşlemesi
 > bu yüzden tek dosyada (`Packages/OCRKit/Sources/OCRKit/VisionDocumentMapper.swift`)
 > izole edilmiştir; o yol tamamen başarısız olsa bile OCR metin ve barkod üretmeye devam eder.
 
