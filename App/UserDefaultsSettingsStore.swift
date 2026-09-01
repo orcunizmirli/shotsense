@@ -16,7 +16,10 @@ actor UserDefaultsSettingsStore: SettingsStoring {
         static let cleanup = "settings.cleanupAssistantEnabled"
     }
 
-    init(defaults: UserDefaults = .standard) {
+    /// Depo aktörün içinde kurulur: `UserDefaults` `Sendable` değildir ve bir örneği
+    /// aktör sınırından geçirmek Swift 6'da veri yarışı riski sayılır.
+    init(suiteName: String? = nil) {
+        let defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
         self.defaults = defaults
         // Varsayılanlar kayıt edilir ki "hiç ayarlanmamış" ile "kapatılmış" karışmasın:
         // `bool(forKey:)` her ikisinde de false döner.

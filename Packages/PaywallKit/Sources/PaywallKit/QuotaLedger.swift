@@ -19,12 +19,18 @@ public actor QuotaLedger: QuotaMetering {
 
     private static let keyPrefix = "quota."
 
+    /// - Parameter suiteName: testlerin birbirinin sayacını görmemesi için ayrı alan;
+    ///   `nil` üretim davranışıdır (`UserDefaults.standard`).
+    ///
+    /// Depo **aktörün içinde** kurulur, dışarıdan alınmaz: `UserDefaults` `Sendable`
+    /// değildir ve bir örneği aktör sınırından geçirmek Swift 6'da veri yarışı riski
+    /// sayılır. Alan adı (`String?`) geçirmek hem güvenli hem yeterlidir.
     public init(
-        defaults: UserDefaults = .standard,
+        suiteName: String? = nil,
         dateProvider: any DateProviding = SystemDateProvider(),
         entitlements: any EntitlementProviding
     ) {
-        self.defaults = defaults
+        defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? .standard
         self.dateProvider = dateProvider
         self.entitlements = entitlements
     }
