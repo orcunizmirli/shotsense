@@ -23,7 +23,10 @@ struct ShotSenseApp: App {
     private var content: some View {
         if let container {
             RootView(dependencies: container.dependencies)
-                .fullScreenCover(isPresented: .constant(!hasCompletedOnboarding)) {
+                // `.constant` binding kullanılmaz: SwiftUI örtüyü kapatmak istediğinde
+                // (sistem tetiklemesi, erişilebilirlik kapatması) bağlamaya yazar ve
+                // sabit bir bağlama bu yazmayı sessizce yutar — örtü açık kalır.
+                .fullScreenCover(isPresented: onboardingBinding) {
                     OnboardingFlow(
                         analyzeSample: Self.sampleAnalyzer(),
                         requestPhotoAccess: { await container.dependencies.source.requestAuthorization() },
@@ -40,6 +43,15 @@ struct ShotSenseApp: App {
         } else {
             ProgressView()
         }
+    }
+
+    private var onboardingBinding: Binding<Bool> {
+        Binding(
+            get: { !hasCompletedOnboarding },
+            set: { isPresented in
+                if !isPresented { hasCompletedOnboarding = true }
+            }
+        )
     }
 
     private func start() async {
