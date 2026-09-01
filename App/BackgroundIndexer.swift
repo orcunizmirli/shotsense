@@ -14,14 +14,21 @@ enum BackgroundIndexer {
     /// Uygulama başlatılırken, `application(_:didFinishLaunching...)` eşdeğerinde çağrılır.
     /// Kayıt gecikirse sistem görevi hiç teslim etmez.
     static func register(pipeline: AnalysisPipeline, settings: any SettingsStoring) {
+        // `using: .main` bilinçli: `nil` verilirse sistem işleyiciyi kendi arka plan
+        // kuyruğunda çağırır ve `BGTask` Sendable OLMADIĞI için görevi asenkron işe
+        // taşımak veri yarışı olur (Swift 6 bunu derlemez). Ana kuyrukta kalınca görev
+        // ana aktöre bağlıdır ve tamamlama çağrısı tek bir yerden yapılır. İşleyici
+        // ağır iş yapmaz; yalnız asenkron işi başlatıp döner.
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: identifier, using: nil
+            forTaskWithIdentifier: identifier, using: .main
         ) { task in
-            guard let processingTask = task as? BGProcessingTask else {
-                task.setTaskCompleted(success: false)
-                return
+            MainActor.assumeIsolated {
+                guard let processingTask = task as? BGProcessingTask else {
+                    task.setTaskCompleted(success: false)
+                    return
+                }
+                handle(processingTask, pipeline: pipeline, settings: settings)
             }
-            handle(processingTask, pipeline: pipeline, settings: settings)
         }
     }
 
@@ -43,6 +50,7 @@ enum BackgroundIndexer {
         }
     }
 
+    @MainActor
     private static func handle(
         _ task: BGProcessingTask,
         pipeline: AnalysisPipeline,
@@ -54,7 +62,7 @@ enum BackgroundIndexer {
         }
 
         let work = Task {
-            try? await pipeline.synchronizeLibrary()
+            _ = try? await pipeline.synchronizeLibrary()
             // Küçük partiler: sistem görevi her an sonlandırabilir; her parti sonunda
             // yapılan iş kalıcıdır, baştan başlamak gerekmez.
             while await pipeline.processPending(limit: 25) > 0 {
