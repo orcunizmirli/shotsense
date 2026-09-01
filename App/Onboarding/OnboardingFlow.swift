@@ -120,14 +120,13 @@ struct OnboardingFlow: View {
                 .background(.surface, in: RoundedRectangle(cornerRadius: Token.Radius.md))
             }
 
+            // Etiket ayrı bir görünüm tipi: PhotosPicker'ın etiket kapanışı Sendable'dır,
+            // yani içinden ana aktöre bağlı bir şeye (durum okumak, `surfaceCard`)
+            // dokunulamaz. Kapanış yalnız bir görünüm DEĞERİ kuruyor; o değerin `body`'si
+            // zaten ana aktörde çalışacağı için her şey yerli yerinde kalıyor.
+            let hasSample = sampleImage != nil
             PhotosPicker(selection: $selection, matching: .screenshots) {
-                Label(
-                    sampleImage == nil ? "Ekran görüntüsü seç" : "Başka bir tane dene",
-                    systemImage: "photo"
-                )
-                .font(Token.Typography.headline)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .surfaceCard(radius: Token.Radius.md)
+                SamplePickerLabel(hasSample: hasSample)
             }
             .buttonStyle(.pressable)
         }
@@ -237,5 +236,24 @@ struct OnboardingFlow: View {
         case .indexing:
             onFinish()
         }
+    }
+}
+
+/// Örnek seçme düğmesinin yüzü.
+///
+/// Ayrı tip olmasının sebebi teknik: `PhotosPicker`'ın etiket kapanışı Sendable'dır ve
+/// ana aktöre bağlı çağrıları kabul etmez. Görünümü tip olarak kurmak hem bu sınırı
+/// aşar hem de SwiftUI'ın yeniden çizim karşılaştırmasını ucuzlatır.
+private struct SamplePickerLabel: View {
+    let hasSample: Bool
+
+    var body: some View {
+        Label(
+            hasSample ? "Başka bir tane dene" : "Ekran görüntüsü seç",
+            systemImage: "photo"
+        )
+        .font(Token.Typography.headline)
+        .frame(maxWidth: .infinity, minHeight: 52)
+        .surfaceCard(radius: Token.Radius.md)
     }
 }
