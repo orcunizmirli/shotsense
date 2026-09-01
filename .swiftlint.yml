@@ -44,7 +44,11 @@ line_length:
 type_body_length: { warning: 300, error: 450 }
 file_length: { warning: 450, error: 700 }
 function_body_length: { warning: 60, error: 100 }
-cyclomatic_complexity: { warning: 12, error: 20 }
+# 14 üyeli kapalı enum'lar (ShotCategory, EntityKind) üzerindeki DÜZ eşleme switch'leri
+# 14 karmaşıklık üretir ama dallanma mantığı içermez — okunması bir sözlük kadar kolaydır ve
+# derleyici eksiksizliği garanti eder. Eşik bu eşlemelere yer bırakacak kadar yükseltilir;
+# gerçek dallanma mantığı 16'yı aştığında kural yine yakalar.
+cyclomatic_complexity: { warning: 16, error: 20 }
 
 identifier_name:
   min_length: { warning: 2 }

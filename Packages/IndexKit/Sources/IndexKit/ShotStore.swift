@@ -23,6 +23,17 @@ public struct IndexedDocument: Sendable, ShotFilterable {
     public var filterAmounts: [Double] { amounts }
 }
 
+/// BM25 indeksini kurmak için gereken ham metin.
+///
+/// İsimsiz demet yerine tip: dört alanlı bir demet çağrı yerinde okunmaz hâle gelir ve
+/// alan sırası değişince derleyici sessizce kabul eder.
+public struct IndexingPayload: Sendable {
+    public let identifier: String
+    public let title: String
+    public let body: String
+    public let tags: [String]
+}
+
 /// SwiftData erişiminin tek noktası.
 ///
 /// `@ModelActor` ile izole edilir: Swift 6'da `ModelContext` `Sendable` değildir ve birden
@@ -129,10 +140,15 @@ public actor ShotStore {
     }
 
     /// Arama için gereken tam metin; indeks kurulurken tek seferde okunur.
-    public func indexingPayloads() throws -> [(identifier: String, title: String, body: String, tags: [String])] {
+    public func indexingPayloads() throws -> [IndexingPayload] {
         let descriptor = FetchDescriptor<ShotRecord>()
-        return try modelContext.fetch(descriptor).map {
-            ($0.assetIdentifier, $0.title, $0.recognizedText + "\n" + $0.summary, $0.tags)
+        return try modelContext.fetch(descriptor).map { record in
+            IndexingPayload(
+                identifier: record.assetIdentifier,
+                title: record.title,
+                body: record.recognizedText + "\n" + record.summary,
+                tags: record.tags
+            )
         }
     }
 

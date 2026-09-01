@@ -29,7 +29,10 @@ struct LibraryViewModelTests {
     @Test("Kayıtlar yeniden eskiye sıralanır")
     func contentIsSortedNewestFirst() async throws {
         let index = FakeIndex(shots: [
-            TestDependencies.shot(identifier: "eski", createdAt: TestDependencies.epoch.addingTimeInterval(-86400)),
+            TestDependencies.shot(
+                identifier: "eski",
+                createdAt: TestDependencies.epoch.addingTimeInterval(-86400)
+            ),
             TestDependencies.shot(identifier: "yeni", createdAt: TestDependencies.epoch),
         ])
         let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))

@@ -43,7 +43,9 @@ public enum Log {
 
     /// Kullanıcıya yansıyan veya veri kaybına yol açabilecek hatalar.
     public static func error(_ category: Category, _ message: String, error: (any Error)? = nil) {
-        let description = error.map { String(describing: type(of: $0)) + ": " + $0.localizedDescription } ?? ""
+        let description = error.map {
+            String(describing: type(of: $0)) + ": " + $0.localizedDescription
+        } ?? ""
         logger(category).error("\(message, privacy: .public) \(description, privacy: .private)")
     }
 }

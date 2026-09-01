@@ -24,7 +24,8 @@ public enum AmountParser {
         public let currencyCode: String?
     }
 
-    private static let numberPattern = "[0-9]{1,3}(?:[.,\\s][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?"
+    private static let numberPattern =
+        "[0-9]{1,3}(?:[.,\\s][0-9]{3})*(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?"
 
     private static let regex: NSRegularExpression? = {
         let markers = currencyMarkers.keys

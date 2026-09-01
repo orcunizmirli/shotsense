@@ -22,7 +22,7 @@ struct RedactionTests {
 
     @Test("Boş ve boşluk-yalnız değer boş döner")
     func emptyStaysEmpty() {
-        #expect(Redaction.mask("   ") == "")
+        #expect(Redaction.mask("   ").isEmpty)
     }
 
     @Test("Özet metnin kendisini içermez")

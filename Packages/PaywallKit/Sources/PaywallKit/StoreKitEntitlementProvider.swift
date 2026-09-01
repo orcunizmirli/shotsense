@@ -36,7 +36,7 @@ public actor StoreKitEntitlementProvider: EntitlementProviding {
 
     public var current: Entitlement { cached }
 
-    public nonisolated func updates() -> AsyncStream<Entitlement> {
+    nonisolated public func updates() -> AsyncStream<Entitlement> {
         AsyncStream { continuation in
             let id = UUID()
             Task { await self.register(continuation, id: id) }

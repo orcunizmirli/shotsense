@@ -8,16 +8,20 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  XCODE_PATH: /Applications/Xcode_26.app
-
 jobs:
   architecture:
     name: Mimari kuralları (R1–R7)
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - run: sudo xcode-select -s "$XCODE_PATH"
+      - name: Xcode sürümünü seç
+        # Runner imajındaki Xcode klasör adı sürümle değişiyor (Xcode_26.app her imajda yok);
+        # sabit yol yazmak CI'ı imaj güncellemesine bağımlı kılar. En yenisi seçilir,
+        # bulunamazsa imajın varsayılanı kullanılır.
+        run: |
+          latest=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
       # Bu adım KANON §1'i (ağ yok) ve 03-mimari.md §4 bağımlılık kurallarını zorlar.
       # Derleyici bu kuralları göremediği için ayrı bir kapı gerekir.
       - name: dependency-lint
@@ -66,7 +70,14 @@ jobs:
         package: ${{ fromJSON(needs.discover.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
-      - run: sudo xcode-select -s "$XCODE_PATH"
+      - name: Xcode sürümünü seç
+        # Runner imajındaki Xcode klasör adı sürümle değişiyor (Xcode_26.app her imajda yok);
+        # sabit yol yazmak CI'ı imaj güncellemesine bağımlı kılar. En yenisi seçilir,
+        # bulunamazsa imajın varsayılanı kullanılır.
+        run: |
+          latest=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
       # Paketler macOS 26'yı da hedefler (Vision/FoundationModels/SwiftData orada da var),
       # bu yüzden simülatör başlatmadan `swift test` ile koşarlar — CI süresi ~4x kısalır.
       # UIKit'e bağlı kod yoktur (KANON: SwiftUI-only), dolayısıyla bu güvenlidir.
@@ -79,7 +90,14 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - run: sudo xcode-select -s "$XCODE_PATH"
+      - name: Xcode sürümünü seç
+        # Runner imajındaki Xcode klasör adı sürümle değişiyor (Xcode_26.app her imajda yok);
+        # sabit yol yazmak CI'ı imaj güncellemesine bağımlı kılar. En yenisi seçilir,
+        # bulunamazsa imajın varsayılanı kullanılır.
+        run: |
+          latest=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest"; fi
+          xcodebuild -version
       - run: brew install xcodegen
       - name: Projeyi üret
         run: xcodegen generate

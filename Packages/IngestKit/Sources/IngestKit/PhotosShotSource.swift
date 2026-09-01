@@ -85,6 +85,7 @@ public final class PhotosShotSource: ShotSourcing, @unchecked Sendable {
         )
         if let album = albums.firstObject {
             let result = PHAsset.fetchAssets(in: album, options: options)
+            // swiftlint:disable:next empty_count — PHFetchResult bir Collection değildir, isEmpty yok.
             if result.count > 0 { return result }
         }
 
@@ -151,6 +152,7 @@ public final class PhotosShotSource: ShotSourcing, @unchecked Sendable {
     public func deleteAssets(identifiers: [String]) async throws {
         guard !identifiers.isEmpty else { return }
         let assets = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
+        // swiftlint:disable:next empty_count — PHFetchResult bir Collection değildir, isEmpty yok.
         guard assets.count > 0 else { return }
 
         do {

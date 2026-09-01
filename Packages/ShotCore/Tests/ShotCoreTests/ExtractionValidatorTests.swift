@@ -40,9 +40,13 @@ struct ExtractionValidatorTests {
     func hallucinatedAmountIsDropped() {
         let source = "TOPLAM 249,90 TL\nKDV 41,65 TL"
         let entities = [
-            ExtractedEntity(kind: .amount, rawValue: "249,90", normalizedValue: "249.90", currencyCode: "TRY"),
+            ExtractedEntity(
+                kind: .amount, rawValue: "249,90", normalizedValue: "249.90", currencyCode: "TRY"
+            ),
             // Model uydurdu: metinde 999,00 diye bir şey yok.
-            ExtractedEntity(kind: .amount, rawValue: "999,00", normalizedValue: "999.00", currencyCode: "TRY")
+            ExtractedEntity(
+                kind: .amount, rawValue: "999,00", normalizedValue: "999.00", currencyCode: "TRY"
+            )
         ]
 
         let validated = validator.validate(entities, against: source)

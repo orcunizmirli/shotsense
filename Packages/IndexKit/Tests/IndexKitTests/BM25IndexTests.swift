@@ -3,10 +3,18 @@ import Testing
 
 @Suite("BM25Index")
 struct BM25IndexTests {
-    private func index(_ documents: [(id: String, title: String, body: String)]) -> BM25Index {
+    private struct Document {
+        let id: String
+        let title: String
+        let body: String
+    }
+
+    private func index(_ documents: [Document]) -> BM25Index {
         var index = BM25Index()
         for document in documents {
-            index.index(documentID: document.id, title: document.title, body: document.body, tags: [])
+            index.index(
+                documentID: document.id, title: document.title, body: document.body, tags: []
+            )
         }
         return index
     }
@@ -16,8 +24,12 @@ struct BM25IndexTests {
         // "kulaklık" araması, kelimeyi başlığında taşıyan ürün ekranını, kelimeyi bir kez
         // geçen uzun makaleden öne çıkarmalı.
         let index = index([
-            (id: "urun", title: "Bluetooth Kulaklık", body: "sepete ekle stokta"),
-            (id: "makale", title: "Teknoloji Haberleri", body: String(repeating: "metin ", count: 200) + "kulaklık"),
+            Document(id: "urun", title: "Bluetooth Kulaklık", body: "sepete ekle stokta"),
+            Document(
+                id: "makale",
+                title: "Teknoloji Haberleri",
+                body: String(repeating: "metin ", count: 200) + "kulaklık"
+            ),
         ])
         let scores = index.scores(for: "kulaklık")
         #expect((scores["urun"] ?? 0) > (scores["makale"] ?? 0))
@@ -26,9 +38,9 @@ struct BM25IndexTests {
     @Test("Her belgede geçen terim ayırt etmez")
     func commonTermHasLowIdf() {
         let index = index([
-            (id: "a", title: "", body: "toplam kulaklık"),
-            (id: "b", title: "", body: "toplam kitap"),
-            (id: "c", title: "", body: "toplam masa"),
+            Document(id: "a", title: "", body: "toplam kulaklık"),
+            Document(id: "b", title: "", body: "toplam kitap"),
+            Document(id: "c", title: "", body: "toplam masa"),
         ])
         let common = index.scores(for: "toplam")
         let rare = index.scores(for: "kulaklık")
@@ -38,8 +50,8 @@ struct BM25IndexTests {
     @Test("Eşleşmeyen belge sonuç kümesine hiç girmez")
     func nonMatchingDocumentsAreExcluded() {
         let index = index([
-            (id: "a", title: "", body: "kulaklık"),
-            (id: "b", title: "", body: "masa"),
+            Document(id: "a", title: "", body: "kulaklık"),
+            Document(id: "b", title: "", body: "masa"),
         ])
         let scores = index.scores(for: "kulaklık")
         #expect(scores["b"] == nil)

@@ -6,6 +6,9 @@ import UniformTypeIdentifiers
 import UIKit
 #endif
 
+// dependency-lint:allow R6 — UIPasteboard'un SwiftUI karşılığı yok; süre sınırlı pano
+// girdisi (07 §4) yalnız bu API ile kurulabilir. Muafiyet bu dosyayla sınırlıdır.
+
 /// `ClipboardWriting` portunun sistem gerçeklemesi.
 ///
 /// Hassas değerler panoda **süresiz kalmaz** (07 §4): IBAN veya wifi şifresi kopyalayan
@@ -14,10 +17,8 @@ import UIKit
 ///
 /// > Not: bu, `UIKit` import eden **tek** dosyadır. Panoya yazmanın SwiftUI karşılığı yoktur
 /// > ve süre sınırlı pano girdisi yalnız `UIPasteboard.setItems(_:options:)` ile kurulabilir.
-/// > Bu yüzden R6'dan açık, gerekçeli ve tek dosyalık bir muafiyet alınır.
-
-// dependency-lint:allow R6 — UIPasteboard'un SwiftUI karşılığı yok; süre sınırlı pano
-// girdisi (07 §4) yalnız bu API ile kurulabilir. Muafiyet bu dosyayla sınırlıdır.
+/// > Bu yüzden R6'dan açık, gerekçeli ve tek dosyalık bir muafiyet alınır (dosya başındaki
+/// > `dependency-lint:allow` satırı).
 public struct SystemClipboard: ClipboardWriting {
     /// Hassas değerin panoda kalma süresi.
     private let sensitiveLifetime: TimeInterval

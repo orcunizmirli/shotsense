@@ -43,7 +43,7 @@ public actor FakeShotSource: ShotSourcing {
         return Data("görsel:\(identifier)".utf8)
     }
 
-    public nonisolated func changes() -> AsyncStream<ShotLibraryChange> {
+    nonisolated public func changes() -> AsyncStream<ShotLibraryChange> {
         AsyncStream { $0.finish() }
     }
 
@@ -59,7 +59,7 @@ public struct FakeTextRecognizer: TextRecognizing {
     public init(text: String? = nil) { self.text = text }
 
     public func recognize(imageData: Data, languages: [String]) async throws -> RecognizedDocument {
-        let content = text ?? String(decoding: imageData, as: UTF8.self)
+        let content = text ?? (String(data: imageData, encoding: .utf8) ?? "")
         return RecognizedDocument(
             blocks: [.init(text: content, verticalPosition: 0.1, relativeHeight: 0.03)],
             languages: ["tr-TR"]
@@ -224,7 +224,7 @@ public actor FakeEntitlementProvider: EntitlementProviding {
 
     public var current: Entitlement { entitlement }
 
-    public nonisolated func updates() -> AsyncStream<Entitlement> {
+    nonisolated public func updates() -> AsyncStream<Entitlement> {
         AsyncStream { $0.finish() }
     }
 
