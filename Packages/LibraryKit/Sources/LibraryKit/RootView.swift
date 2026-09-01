@@ -35,9 +35,7 @@ public struct RootView: View {
             PaywallView(dependencies: dependencies, trigger: paywall.trigger ?? .settings)
                 // Paywall tam ekran değil sayfa olarak açılır: kullanıcı arkasındaki
                 // içeriği görmeye devam eder ve "kapana kısıldım" hissi oluşmaz.
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(.regularMaterial)
+                .largeSheetPresentation()
         }
     }
 }

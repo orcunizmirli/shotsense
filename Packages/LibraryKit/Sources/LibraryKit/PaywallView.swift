@@ -213,7 +213,7 @@ public struct PaywallView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(Token.Space.lg)
-        .background(.bar)
+        .background(.thinMaterial)
     }
 
     private var selectedProductHasTrial: Bool {

@@ -36,12 +36,12 @@ public struct ShotDetailView: View {
         }
         .scrollIndicators(.hidden)
         .navigationTitle(model.shot.analysis.title.isEmpty ? "Detay" : model.shot.analysis.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineTitle()
         .toolbar { toolbarMenu }
         .task { await model.load() }
         .overlay(alignment: .bottom) { actionBar }
         .overlay(alignment: .bottom) { toast }
-        .fullScreenCover(isPresented: $isViewerPresented) {
+        .fullScreenPresentation(isPresented: $isViewerPresented) {
             ImageViewer(image: model.displayImage) { isViewerPresented = false }
         }
         .alert("Bir sorun oldu", isPresented: errorBinding) {

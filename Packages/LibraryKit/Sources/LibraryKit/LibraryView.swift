@@ -178,7 +178,7 @@ private struct CategoryChipBar: View {
         }
         .scrollIndicators(.hidden)
         // Çip şeridi içeriğin üstünde yüzer; arkasındaki ızgara kaydıkça bulanıklaşır.
-        .background(.bar)
+        .background(.thinMaterial)
         .animation(Token.Motion.standard, value: model.categoryCounts.map(\.category))
     }
 

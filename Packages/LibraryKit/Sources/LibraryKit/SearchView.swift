@@ -39,11 +39,7 @@ public struct SearchView: View {
                         .zoom(sourceID: result.shot.assetIdentifier, in: transitionNamespace)
                     )
             }
-            .searchable(
-                text: $model.queryText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Doğal dilde sor"
-            )
+            .alwaysVisibleSearchBar(text: $model.queryText, prompt: "Doğal dilde sor")
             .onSubmit(of: .search) {
                 Task { await model.submit() }
             }
@@ -221,7 +217,7 @@ private struct SearchFilterBar: View {
                 .padding(.vertical, Token.Space.sm)
             }
             .scrollIndicators(.hidden)
-            .background(.bar)
+            .background(.thinMaterial)
             .transition(.move(edge: .top).combined(with: .opacity))
             .animation(Token.Motion.standard, value: intent)
         }
