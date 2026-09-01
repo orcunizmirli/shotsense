@@ -6,6 +6,7 @@ import SwiftUI
 public struct LibraryView: View {
     @State private var model: LibraryViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Namespace private var transitionNamespace
 
     private let dependencies: LibraryDependencies
     private let paywall: PaywallPresenter
@@ -19,6 +20,12 @@ public struct LibraryView: View {
     public var body: some View {
         content
             .navigationTitle("Kitaplık")
+            .navigationDestination(for: Shot.self) { shot in
+                ShotDetailView(shot: shot, dependencies: dependencies, paywall: paywall)
+                    // Izgaradaki karttan detaya büyüyen geçiş: kullanıcı hangi öğeye
+                    // girdiğini gözden kaçırmaz ve geri dönüş yönü açıktır.
+                    .navigationTransition(.zoom(sourceID: shot.assetIdentifier, in: transitionNamespace))
+            }
             .task {
                 await model.load()
                 await model.startIndexing()
@@ -30,10 +37,11 @@ public struct LibraryView: View {
         switch model.state {
         case .loading:
             skeletonGrid
+
         case .permissionRequired:
             // 02 §3: "izin yok" ile "sonuç yok" asla aynı ekranı göstermez.
             StateView(
-                symbolName: "lock",
+                symbolName: "lock.open.rotation",
                 title: "Fotoğraflara erişim gerekli",
                 message: "Ekran görüntülerini cihazında indeksleyebilmemiz için erişim izni ver. "
                     + "Görsellerin telefonundan çıkmaz.",
@@ -41,101 +49,157 @@ public struct LibraryView: View {
             ) {
                 Task { await model.requestPermission() }
             }
+
         case .empty:
             StateView(
-                symbolName: "photo.on.rectangle.angled",
+                symbolName: model.selectedCategory == nil
+                    ? "photo.on.rectangle.angled" : "line.3.horizontal.decrease",
                 title: model.selectedCategory == nil ? "Ekran görüntüsü yok" : "Bu kategoride yok",
                 message: model.selectedCategory == nil
                     ? "Telefonunda ekran görüntüsü bulunamadı."
-                    : "Başka bir kategori dene."
-            )
+                    : "Başka bir kategori dene.",
+                actionTitle: model.selectedCategory == nil ? nil : "Tümünü göster"
+            ) {
+                Task { await model.select(category: nil) }
+            }
+
         case let .failed(message):
             StateView(
                 symbolName: "exclamationmark.triangle",
                 title: "Bir sorun oldu",
-                message: LocalizedStringKey(message),
+                message: message,
                 actionTitle: "Tekrar dene"
             ) {
                 Task { await model.reload() }
             }
+
         case let .content(shots):
             grid(shots)
         }
     }
 
+    // MARK: - Izgara
+
+    private var columnCount: Int {
+        Token.gridColumns(for: dynamicTypeSize)
+    }
+
     private var columns: [GridItem] {
         Array(
-            repeating: GridItem(.flexible(), spacing: Token.Space.sm),
-            count: Token.gridColumns(for: dynamicTypeSize)
+            repeating: GridItem(.flexible(), spacing: Token.Space.md),
+            count: columnCount
         )
     }
 
     private var skeletonGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: Token.Space.md) {
-                ForEach(0 ..< 9, id: \.self) { _ in SkeletonCard() }
+            LazyVGrid(columns: columns, spacing: Token.Space.lg) {
+                ForEach(0 ..< 12, id: \.self) { _ in SkeletonCard() }
             }
-            .padding(Token.Space.lg)
+            .padding(.horizontal, Token.Space.lg)
+            .padding(.top, Token.Space.sm)
         }
+        .scrollDisabled(true)
     }
 
     private func grid(_ shots: [Shot]) -> some View {
-        VStack(spacing: 0) {
-            if let progress = model.progress, progress.isRunning || progress.fraction < 1 {
-                ProgressBanner(analyzed: progress.analyzed, total: progress.total)
-            }
-            categoryChips
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: Token.Space.md) {
-                    ForEach(shots) { shot in
-                        NavigationLink {
-                            ShotDetailView(
-                                shot: shot, dependencies: dependencies, paywall: paywall
-                            )
-                        } label: {
-                            ShotCard(shot: shot, thumbnailData: model.thumbnail(for: shot))
-                        }
-                        .buttonStyle(.plain)
-                        .task {
-                            await model.loadThumbnail(for: shot)
-                            await model.loadMoreIfNeeded(currentItem: shot)
-                        }
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: Token.Space.lg) {
+                ForEach(shots) { shot in
+                    NavigationLink(value: shot) {
+                        ShotCard(shot: shot, image: model.image(for: shot))
+                    }
+                    .buttonStyle(.pressableCard)
+                    .matchedTransitionSource(id: shot.assetIdentifier, in: transitionNamespace)
+                    .task(id: shot.assetIdentifier) {
+                        // Hücre görününce hem önizleme penceresi istenir hem de sayfalama
+                        // tetiklenir; ikisi de ucuz ve kuyruklanmış işlerdir.
+                        await model.cellAppeared(shot)
                     }
                 }
-                .padding(Token.Space.lg)
             }
-            .refreshable { await model.reload() }
+            .padding(.horizontal, Token.Space.lg)
+            .padding(.top, Token.Space.sm)
+            .padding(.bottom, Token.Space.xxxl)
+            .animation(Token.Motion.standard, value: shots.count)
         }
+        .scrollIndicators(.hidden)
+        .refreshable { await model.reload() }
+        .safeAreaInset(edge: .top, spacing: 0) { categoryChips }
+        .overlay(alignment: .bottom) { indexingBadge }
     }
 
+    // MARK: - Kategori çipleri
+
     private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             HStack(spacing: Token.Space.sm) {
-                chip(title: "Tümü", isSelected: model.selectedCategory == nil) {
-                    Task { await model.select(category: nil) }
-                }
-                ForEach(model.availableCategories, id: \.self) { category in
-                    let style = CategoryStyle.style(for: category)
-                    chip(title: style.title, isSelected: model.selectedCategory == category) {
-                        Task { await model.select(category: category) }
-                    }
+                chip(title: "Tümü", count: nil, category: nil)
+                ForEach(model.categoryCounts, id: \.category) { entry in
+                    chip(
+                        title: CategoryStyle.style(for: entry.category).title,
+                        count: entry.count,
+                        category: entry.category
+                    )
                 }
             }
             .padding(.horizontal, Token.Space.lg)
             .padding(.vertical, Token.Space.sm)
         }
+        .scrollIndicators(.hidden)
+        // Çip şeridi içeriğin üstünde yüzer; arkasındaki ızgara kaydıkça bulanıklaşır.
+        .background(.bar)
+        .animation(Token.Motion.standard, value: model.categoryCounts.map(\.category))
     }
 
-    private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                .padding(.horizontal, Token.Space.md)
-                .padding(.vertical, Token.Space.sm)
-                .background(isSelected ? Color.accentColor.opacity(0.2) : .surface, in: Capsule())
+    private func chip(title: String, count: Int?, category: ShotCategory?) -> some View {
+        let isSelected = model.selectedCategory == category
+
+        return Button {
+            Task { await model.select(category: category) }
+        } label: {
+            HStack(spacing: Token.Space.xs) {
+                Text(title)
+                    .font(Token.Typography.caption)
+                if let count {
+                    Text("\(count)")
+                        .font(Token.Typography.micro)
+                        .foregroundStyle(.secondary)
+                        .contentTransition(.numericText(value: Double(count)))
+                }
+            }
+            .fontWeight(isSelected ? .semibold : .regular)
+            .padding(.horizontal, Token.Space.md)
+            .frame(minHeight: 34)
+            .background {
+                if isSelected {
+                    Capsule(style: .continuous)
+                        .fill(Color.accentColor.opacity(0.18))
+                        // Seçim vurgusu çipler arasında kayar; anlık geçiş yerine hareket
+                        // kullanıcının hangi çipten hangisine geçtiğini gösterir.
+                        .matchedGeometryEffect(id: "chip.selection", in: transitionNamespace)
+                } else {
+                    Capsule(style: .continuous).fill(.surface)
+                }
+            }
+            .foregroundStyle(isSelected ? Color.accentColor : .primary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .frame(minHeight: Token.minimumTapTarget)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityLabel(count.map { "\(title), \($0) öğe" } ?? title)
+        .sensoryFeedback(.selection, trigger: isSelected)
+    }
+
+    // MARK: - İlerleme
+
+    @ViewBuilder
+    private var indexingBadge: some View {
+        if let progress = model.progress, progress.isRunning, progress.total > 0 {
+            IndexingBadge(analyzed: progress.analyzed, total: progress.total)
+                .padding(.bottom, Token.Space.lg)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(Token.Motion.standard, value: progress.isRunning)
+        }
     }
 }

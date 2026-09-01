@@ -119,6 +119,19 @@ public protocol ShotIndexing: Sendable {
     /// görsel yükleme adımına bağlıdır ve analiz başarısız olsa da önizleme kullanılabilir.
     func setThumbnail(_ data: Data, for assetIdentifier: String) async throws
     func thumbnail(for assetIdentifier: String) async throws -> Data?
+
+    /// **Toplu** önizleme okuma.
+    ///
+    /// Izgarada 30 hücre görünürken tek tek `thumbnail(for:)` çağırmak veri deposu
+    /// aktörüne 30 ayrı gidiş-dönüş demektir; hepsi sıraya girer ve kaydırma takılır.
+    /// Tek sorguda okumak bunu bir gidiş-dönüşe indirir.
+    func thumbnails(for assetIdentifiers: [String]) async throws -> [String: Data]
+
+    /// Kategori başına kayıt sayısı — kitaplık çipleri bunu kullanır.
+    ///
+    /// Alternatif (her kategori için ayrı sorgu) 14 gidiş-dönüş eder ve kitaplık her
+    /// yenilendiğinde tekrarlanır.
+    func categoryCounts() async throws -> [ShotCategory: Int]
     /// Türev veriyi siler; kaynak görsellere dokunmaz (05 §6).
     func resetIndex() async throws
 }

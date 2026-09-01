@@ -27,7 +27,11 @@ public struct CategoryStyle: Sendable {
         case .article:
             return .init(title: "Makale", symbolName: "doc.text", tint: .brown)
         case .code:
-            return .init(title: "Kod", symbolName: "chevron.left.forwardslash.chevron.right", tint: .purple)
+            return .init(
+                title: "Kod",
+                symbolName: "chevron.left.forwardslash.chevron.right",
+                tint: .purple
+            )
         case .product:
             return .init(title: "Ürün", symbolName: "bag", tint: .pink)
         case .location:
@@ -48,32 +52,53 @@ public struct CategoryStyle: Sendable {
 
 /// Kategori rozeti.
 ///
-/// Renk **tek başına** taşıyıcı değildir: her rozette ikon ve metin de vardır (02 §4).
-/// Renk körlüğü olan kullanıcı da kategoriyi ayırt edebilmelidir.
+/// Renk **tek başına** taşıyıcı değildir: her varyantta ikon vardır ve erişilebilirlik
+/// etiketi adı okur (02 §4). Renk körlüğü olan kullanıcı da kategoriyi ayırt edebilmelidir.
 public struct CategoryBadge: View {
-    private let category: ShotCategory
-    private let compact: Bool
+    public enum Style {
+        /// Ad + ikon. Detay ve arama sonuçlarında.
+        case full
+        /// Yalnız ikon, küçük daire. Izgara hücresinde — başlık için yer kalsın diye.
+        case glyph
+    }
 
-    public init(category: ShotCategory, compact: Bool = false) {
+    private let category: ShotCategory
+    private let style: Style
+
+    public init(category: ShotCategory, style: Style = .full) {
         self.category = category
-        self.compact = compact
+        self.style = style
     }
 
     public var body: some View {
-        let style = CategoryStyle.style(for: category)
-        HStack(spacing: Token.Space.xs) {
-            Image(systemName: style.symbolName)
-                .imageScale(.small)
-            if !compact {
-                Text(style.title)
-                    .font(.caption.weight(.medium))
+        let categoryStyle = CategoryStyle.style(for: category)
+
+        Group {
+            switch style {
+            case .full:
+                HStack(spacing: Token.Space.xs) {
+                    Image(systemName: categoryStyle.symbolName)
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(categoryStyle.title)
+                        .font(Token.Typography.micro)
+                }
+                .padding(.horizontal, Token.Space.sm)
+                .padding(.vertical, 5)
+                .background(categoryStyle.tint.opacity(0.16), in: Capsule(style: .continuous))
+                .foregroundStyle(categoryStyle.tint)
+
+            case .glyph:
+                Image(systemName: categoryStyle.symbolName)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    // Görselin üstünde durduğu için sabit renk yetmez: koyu zemin +
+                    // ince materyal her arka planda okunurluğu garantiler.
+                    .background(categoryStyle.tint.opacity(0.9), in: Circle())
+                    .background(.ultraThinMaterial, in: Circle())
             }
         }
-        .padding(.horizontal, compact ? Token.Space.xs : Token.Space.sm)
-        .padding(.vertical, Token.Space.xs)
-        .background(style.tint.opacity(0.18), in: Capsule())
-        .foregroundStyle(style.tint)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(style.title)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(categoryStyle.title)
     }
 }

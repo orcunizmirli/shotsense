@@ -68,6 +68,36 @@ public actor ShotStore {
         try existingRecord(for: assetIdentifier)?.thumbnailData
     }
 
+    /// Toplu önizleme okuma: tek sorgu, tek gidiş-dönüş.
+    public func thumbnails(for assetIdentifiers: [String]) throws -> [String: Data] {
+        guard !assetIdentifiers.isEmpty else { return [:] }
+        // Predicate içinde Array.contains desteklenir; Set desteklenmez.
+        let wanted = assetIdentifiers
+        let descriptor = FetchDescriptor<ShotRecord>(
+            predicate: #Predicate { wanted.contains($0.assetIdentifier) }
+        )
+        var result: [String: Data] = [:]
+        for record in try modelContext.fetch(descriptor) {
+            if let data = record.thumbnailData {
+                result[record.assetIdentifier] = data
+            }
+        }
+        return result
+    }
+
+    /// Kategori başına kayıt sayısı; tek geçişte hesaplanır.
+    public func categoryCounts() throws -> [ShotCategory: Int] {
+        var descriptor = FetchDescriptor<ShotRecord>()
+        // Yalnız kategori alanı okunur: OCR metnini belleğe açmaya gerek yok.
+        descriptor.propertiesToFetch = [\.categoryRaw]
+        var counts: [ShotCategory: Int] = [:]
+        for record in try modelContext.fetch(descriptor) {
+            let category = ShotCategory(rawValue: record.categoryRaw) ?? .other
+            counts[category, default: 0] += 1
+        }
+        return counts
+    }
+
     public func markAttempt(for assetIdentifier: String) throws {
         guard let record = try existingRecord(for: assetIdentifier) else { return }
         record.analysisAttempts += 1

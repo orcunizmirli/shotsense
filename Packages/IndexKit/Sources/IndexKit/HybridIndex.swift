@@ -109,6 +109,14 @@ public actor HybridIndex: ShotIndexing {
         try await store.thumbnail(for: assetIdentifier)
     }
 
+    public func thumbnails(for assetIdentifiers: [String]) async throws -> [String: Data] {
+        try await store.thumbnails(for: assetIdentifiers)
+    }
+
+    public func categoryCounts() async throws -> [ShotCategory: Int] {
+        try await store.categoryCounts()
+    }
+
     public func resetIndex() async throws {
         try await store.reset()
         bm25.removeAll()

@@ -108,6 +108,10 @@ public actor FakeIndex: ShotIndexing {
     public private(set) var storage: [String: Shot] = [:]
     public private(set) var thumbnails: [String: Data] = [:]
     public private(set) var searchQueries: [SearchQuery] = []
+    /// Testler toplu okuma yapıldığını doğrular: hücre başına tek tek okuma performans
+    /// gerilemesidir ve sessizce geri gelebilir.
+    public private(set) var thumbnailBatchRequests: [[String]] = []
+    public private(set) var categoryCountRequests = 0
     private var shouldFail = false
 
     public init(shots: [Shot] = []) {
@@ -183,6 +187,18 @@ public actor FakeIndex: ShotIndexing {
 
     public func thumbnail(for assetIdentifier: String) async throws -> Data? {
         thumbnails[assetIdentifier]
+    }
+
+    public func thumbnails(for assetIdentifiers: [String]) async throws -> [String: Data] {
+        thumbnailBatchRequests.append(assetIdentifiers)
+        return thumbnails.filter { assetIdentifiers.contains($0.key) }
+    }
+
+    public func categoryCounts() async throws -> [ShotCategory: Int] {
+        categoryCountRequests += 1
+        return storage.values.reduce(into: [:]) { counts, shot in
+            counts[shot.analysis.category, default: 0] += 1
+        }
     }
 
     public func resetIndex() async throws {
