@@ -24,7 +24,7 @@ public struct LibraryView: View {
                 ShotDetailView(shot: shot, dependencies: dependencies, paywall: paywall)
                     // Izgaradaki karttan detaya büyüyen geçiş: kullanıcı hangi öğeye
                     // girdiğini gözden kaçırmaz ve geri dönüş yönü açıktır.
-                    .navigationTransition(.zoom(sourceID: shot.assetIdentifier, in: transitionNamespace))
+                    .zoomTransition(sourceID: shot.assetIdentifier, in: transitionNamespace)
             }
             .task {
                 await model.load()

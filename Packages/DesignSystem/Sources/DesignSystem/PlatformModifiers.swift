@@ -22,9 +22,9 @@ public extension View {
     ///
     /// Tam ekran inceleyici gibi ekranlar iOS'ta örtü olarak açılmalıdır; macOS'ta
     /// böyle bir sunum tarzı yoktur ve sayfa doğru karşılıktır.
-    func fullScreenPresentation<Content: View>(
+    func fullScreenPresentation(
         isPresented: Binding<Bool>,
-        @ViewBuilder content: @escaping () -> Content
+        @ViewBuilder content: @escaping () -> some View
     ) -> some View {
         #if os(iOS)
         fullScreenCover(isPresented: isPresented, content: content)
@@ -44,10 +44,22 @@ public extension View {
         #endif
     }
 
+    /// Izgaradaki karttan detaya büyüyen geçiş (yalnız iOS).
+    ///
+    /// macOS'ta `NavigationTransition.zoom` kullanılamaz; orada varsayılan geçiş kalır.
+    /// Geçişin kendisi ürün için önemli ama macOS yalnız test hedefi olduğundan kayıp yok.
+    func zoomTransition(sourceID: some Hashable, in namespace: Namespace.ID) -> some View {
+        #if os(iOS)
+        navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        #else
+        self
+        #endif
+    }
+
     /// Arama çubuğunu her zaman görünür tutar (yalnız iOS'ta yerleşim seçilebilir).
-    func alwaysVisibleSearchBar<S: StringProtocol>(
+    func alwaysVisibleSearchBar(
         text: Binding<String>,
-        prompt: S
+        prompt: some StringProtocol
     ) -> some View {
         #if os(iOS)
         searchable(

@@ -1,4 +1,6 @@
 import AppFoundation
+import Foundation
+import Observation
 import ShotCore
 
 /// Arayüzün ihtiyaç duyduğu portların paketi.

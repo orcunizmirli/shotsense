@@ -19,7 +19,7 @@ public struct SearchView: View {
         "geçen ay fişler",
         "yaklaşan biletler",
         "kargo takip",
-        "IBAN",
+        "IBAN"
     ]
 
     public init(dependencies: LibraryDependencies, paywall: PaywallPresenter) {
@@ -35,8 +35,8 @@ public struct SearchView: View {
             .navigationTitle("Ara")
             .navigationDestination(for: SearchResult.self) { result in
                 ShotDetailView(shot: result.shot, dependencies: dependencies, paywall: paywall)
-                    .navigationTransition(
-                        .zoom(sourceID: result.shot.assetIdentifier, in: transitionNamespace)
+                    .zoomTransition(
+                        sourceID: result.shot.assetIdentifier, in: transitionNamespace
                     )
             }
             .alwaysVisibleSearchBar(text: $model.queryText, prompt: "Doğal dilde sor")

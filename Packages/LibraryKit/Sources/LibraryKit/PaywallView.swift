@@ -151,7 +151,9 @@ public struct PaywallView: View {
             HStack(spacing: Token.Space.md) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
-                    .foregroundStyle(isSelected ? Color.accentColor : .quaternary)
+                    // Ternary iki dalı aynı tipe zorlar; `.quaternary` bir Color değil
+                    // hiyerarşik stildir. Seçilmemiş hâl için sönük bir Color kullanılır.
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary.opacity(0.35))
                     .contentTransition(.symbolEffect(.replace))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -229,7 +231,7 @@ public struct PaywallView: View {
     }
 
     private func loadProducts() async {
-        products = (try? await dependencies.entitlements.availableProducts()) ?? []
+        products = await (try? dependencies.entitlements.availableProducts()) ?? []
         // Yıllık varsayılan seçili: kullanıcı karşılaştırmayı yıllık üzerinden yapar (06 §2).
         selectedProductIdentifier = products.first { $0.periodDescription == "yıl" }?.identifier
             ?? products.first?.identifier
