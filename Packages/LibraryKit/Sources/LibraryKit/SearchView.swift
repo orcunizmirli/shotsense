@@ -47,7 +47,7 @@ public struct SearchView: View {
             .onSubmit(of: .search) {
                 Task { await model.submit() }
             }
-            .safeAreaInset(edge: .top, spacing: 0) { filterChips }
+            .safeAreaInset(edge: .top, spacing: 0) { SearchFilterBar(model: model) }
     }
 
     @ViewBuilder
@@ -137,69 +137,6 @@ public struct SearchView: View {
         }
     }
 
-    // MARK: - Filtre çipleri
-
-    /// Modelin sorgudan **ne anladığı** görünür olmalı: sessizce uygulanan filtre,
-    /// kullanıcının anlamadığı boş sonuç demektir (02 §2.3).
-    @ViewBuilder
-    private var filterChips: some View {
-        if let intent = model.appliedIntent, intent.hasFilters {
-            ScrollView(.horizontal) {
-                HStack(spacing: Token.Space.sm) {
-                    if let category = intent.category {
-                        removableChip(
-                            symbol: CategoryStyle.style(for: category).symbolName,
-                            title: CategoryStyle.style(for: category).title
-                        ) {
-                            Task { await model.removeCategoryFilter() }
-                        }
-                    }
-                    if let range = intent.dateRange {
-                        removableChip(symbol: "calendar", title: Self.title(for: range)) {
-                            Task { await model.removeDateFilter() }
-                        }
-                    }
-                    if intent.minAmount != nil || intent.maxAmount != nil {
-                        removableChip(
-                            symbol: "turkishlirasign.circle",
-                            title: amountChipTitle(intent)
-                        ) {
-                            Task { await model.removeAmountFilter() }
-                        }
-                    }
-                }
-                .padding(.horizontal, Token.Space.lg)
-                .padding(.vertical, Token.Space.sm)
-            }
-            .scrollIndicators(.hidden)
-            .background(.bar)
-            .transition(.move(edge: .top).combined(with: .opacity))
-            .animation(Token.Motion.standard, value: intent)
-        }
-    }
-
-    private func removableChip(
-        symbol: String,
-        title: String,
-        onRemove: @escaping () -> Void
-    ) -> some View {
-        Button(action: onRemove) {
-            HStack(spacing: Token.Space.xs) {
-                Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
-                Text(title).font(Token.Typography.caption)
-                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, Token.Space.md)
-            .frame(minHeight: 32)
-            .background(Color.accentColor.opacity(0.16), in: Capsule(style: .continuous))
-            .foregroundStyle(Color.accentColor)
-        }
-        .buttonStyle(.pressable)
-        .frame(minHeight: Token.minimumTapTarget)
-        .accessibilityLabel("\(title) filtresini kaldır")
-    }
-
     // MARK: - Sonuçlar
 
     private func resultList(_ results: [SearchResult]) -> some View {
@@ -207,7 +144,9 @@ public struct SearchView: View {
             LazyVStack(spacing: Token.Space.sm) {
                 ForEach(results) { result in
                     NavigationLink(value: result) {
-                        SearchResultRow(result: result, image: model.image(for: result))
+                        // Hücre ayrı görünüm: önizleme önbelleğini kendisi okur, böylece
+                        // görsel geldiğinde tüm sonuç listesi değil yalnız satır yenilenir.
+                        SearchResultCell(result: result, model: model)
                     }
                     .buttonStyle(.pressableCard)
                     .matchedTransitionSource(
@@ -226,12 +165,6 @@ public struct SearchView: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
-    private func amountChipTitle(_ intent: SearchIntent) -> String {
-        if let minimum = intent.minAmount { return "\(Int(minimum))+ " }
-        if let maximum = intent.maxAmount { return "\(Int(maximum))-" }
-        return "tutar"
-    }
-
     static func title(for range: RelativeDateRange) -> String {
         switch range {
         case .last7Days: return "son 7 gün"
@@ -240,5 +173,86 @@ public struct SearchView: View {
         case .thisYear: return "bu yıl"
         case .lastYear: return "geçen yıl"
         }
+    }
+}
+
+// MARK: - Alt görünümler
+
+private struct SearchResultCell: View {
+    let result: SearchResult
+    let model: SearchViewModel
+
+    var body: some View {
+        SearchResultRow(result: result, image: model.image(for: result))
+    }
+}
+
+/// Ayrıştırılan filtrelerin çip şeridi.
+///
+/// Modelin sorgudan **ne anladığı** görünür olmalı: sessizce uygulanan filtre,
+/// kullanıcının anlamadığı boş sonuç demektir (02 §2.3).
+private struct SearchFilterBar: View {
+    let model: SearchViewModel
+
+    var body: some View {
+        if let intent = model.appliedIntent, intent.hasFilters {
+            ScrollView(.horizontal) {
+                HStack(spacing: Token.Space.sm) {
+                    if let category = intent.category {
+                        chip(
+                            symbol: CategoryStyle.style(for: category).symbolName,
+                            title: CategoryStyle.style(for: category).title
+                        ) {
+                            Task { await model.removeCategoryFilter() }
+                        }
+                    }
+                    if let range = intent.dateRange {
+                        chip(symbol: "calendar", title: SearchView.title(for: range)) {
+                            Task { await model.removeDateFilter() }
+                        }
+                    }
+                    if intent.minAmount != nil || intent.maxAmount != nil {
+                        chip(symbol: "turkishlirasign.circle", title: amountTitle(intent)) {
+                            Task { await model.removeAmountFilter() }
+                        }
+                    }
+                }
+                .padding(.horizontal, Token.Space.lg)
+                .padding(.vertical, Token.Space.sm)
+            }
+            .scrollIndicators(.hidden)
+            .background(.bar)
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .animation(Token.Motion.standard, value: intent)
+        }
+    }
+
+    private func chip(
+        symbol: String,
+        title: String,
+        onRemove: @escaping () -> Void
+    ) -> some View {
+        Button(action: onRemove) {
+            HStack(spacing: Token.Space.xs) {
+                Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                Text(title).font(Token.Typography.caption)
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, Token.Space.md)
+            .frame(minHeight: 32)
+            .background(Color.accentColor.opacity(0.16), in: Capsule(style: .continuous))
+            .foregroundStyle(Color.accentColor)
+        }
+        .buttonStyle(.pressable)
+        .frame(minHeight: Token.minimumTapTarget)
+        .accessibilityLabel("\(title) filtresini kaldır")
+    }
+
+    private func amountTitle(_ intent: SearchIntent) -> String {
+        if let minimum = intent.minAmount { return "\(Int(minimum))+" }
+        if let maximum = intent.maxAmount { return "\(Int(maximum))-" }
+        return "tutar"
     }
 }

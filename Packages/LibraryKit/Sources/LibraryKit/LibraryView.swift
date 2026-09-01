@@ -107,7 +107,10 @@ public struct LibraryView: View {
             LazyVGrid(columns: columns, spacing: Token.Space.lg) {
                 ForEach(shots) { shot in
                     NavigationLink(value: shot) {
-                        ShotCard(shot: shot, image: model.image(for: shot))
+                        // Hücre AYRI bir görünüm: önizleme önbelleğini kendisi okur.
+                        // Okuma burada, kapsayıcının gövdesinde yapılsaydı her görsel
+                        // gelişinde tüm ızgara (çipler, rozet, yerleşim) geçersizleşirdi.
+                        LibraryCell(shot: shot, model: model)
                     }
                     .buttonStyle(.pressableCard)
                     .matchedTransitionSource(id: shot.assetIdentifier, in: transitionNamespace)
@@ -125,13 +128,40 @@ public struct LibraryView: View {
         }
         .scrollIndicators(.hidden)
         .refreshable { await model.reload() }
-        .safeAreaInset(edge: .top, spacing: 0) { categoryChips }
-        .overlay(alignment: .bottom) { indexingBadge }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            CategoryChipBar(model: model, namespace: transitionNamespace)
+        }
+        .overlay(alignment: .bottom) {
+            IndexingBadgeOverlay(model: model)
+        }
     }
+}
 
-    // MARK: - Kategori çipleri
+// MARK: - Alt görünümler
 
-    private var categoryChips: some View {
+/// Tek ızgara hücresi.
+///
+/// Ayrı bir `View` olmasının sebebi **gözlem kapsamıdır**: önizleme önbelleği burada
+/// okunur, dolayısıyla önbellek değiştiğinde yalnız hücreler yeniden çizilir — kapsayıcı
+/// ekran (çip şeridi, ilerleme rozeti, ızgara yerleşimi) el değmeden kalır.
+private struct LibraryCell: View {
+    let shot: Shot
+    let model: LibraryViewModel
+
+    var body: some View {
+        ShotCard(shot: shot, image: model.image(for: shot))
+    }
+}
+
+/// Kategori çip şeridi.
+///
+/// Kapsayıcıdan ayrılmıştır: kategori sayıları indeksleme sürerken değişir ve bu
+/// değişimin ızgarayı yeniden kurması için hiçbir sebep yoktur.
+private struct CategoryChipBar: View {
+    let model: LibraryViewModel
+    let namespace: Namespace.ID
+
+    var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: Token.Space.sm) {
                 chip(title: "Tümü", count: nil, category: nil)
@@ -177,7 +207,7 @@ public struct LibraryView: View {
                         .fill(Color.accentColor.opacity(0.18))
                         // Seçim vurgusu çipler arasında kayar; anlık geçiş yerine hareket
                         // kullanıcının hangi çipten hangisine geçtiğini gösterir.
-                        .matchedGeometryEffect(id: "chip.selection", in: transitionNamespace)
+                        .matchedGeometryEffect(id: "chip.selection", in: namespace)
                 } else {
                     Capsule(style: .continuous).fill(.surface)
                 }
@@ -190,16 +220,21 @@ public struct LibraryView: View {
         .accessibilityLabel(count.map { "\(title), \($0) öğe" } ?? title)
         .sensoryFeedback(.selection, trigger: isSelected)
     }
+}
 
-    // MARK: - İlerleme
+/// İndeksleme ilerleme rozeti.
+///
+/// Ayrı görünüm: ilerleme saniyede birkaç kez güncellenir; bu okumayı kapsayıcıda
+/// bırakmak her güncellemede tüm ızgarayı yeniden çizdirirdi.
+private struct IndexingBadgeOverlay: View {
+    let model: LibraryViewModel
 
-    @ViewBuilder
-    private var indexingBadge: some View {
+    var body: some View {
         if let progress = model.progress, progress.isRunning, progress.total > 0 {
             IndexingBadge(analyzed: progress.analyzed, total: progress.total)
                 .padding(.bottom, Token.Space.lg)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(Token.Motion.standard, value: progress.isRunning)
+                .animation(Token.Motion.standard, value: progress.analyzed)
         }
     }
 }
