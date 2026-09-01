@@ -13,7 +13,7 @@ struct QuotaLedgerTests {
     }
 
     @Test("Free kullanıcı aylık sınıra kadar tüketir")
-    func freeUserConsumesUpToLimit() async throws {
+    func freeUserConsumesUpToLimit() async {
         let ledger = QuotaLedger(
             suiteName: makeSuiteName(),
             dateProvider: MutableDateProvider(),
@@ -28,7 +28,7 @@ struct QuotaLedgerTests {
     }
 
     @Test("Pro kullanıcıda sınır yok")
-    func proUserIsUnlimited() async throws {
+    func proUserIsUnlimited() async {
         let ledger = QuotaLedger(
             suiteName: makeSuiteName(),
             dateProvider: MutableDateProvider(),
@@ -42,7 +42,7 @@ struct QuotaLedgerTests {
     }
 
     @Test("Pro kullanıcıda sayaç artmaz")
-    func proUsageDoesNotAccumulate() async throws {
+    func proUsageDoesNotAccumulate() async {
         // Abonelik biterse eski aylardan devreden bir "borç" oluşmamalı.
         let suite = makeSuiteName()
         let clock = MutableDateProvider()
@@ -62,7 +62,7 @@ struct QuotaLedgerTests {
     }
 
     @Test("Ay değişince kota kendiliğinden yenilenir")
-    func quotaResetsNextMonth() async throws {
+    func quotaResetsNextMonth() async {
         let clock = MutableDateProvider(now: Date(timeIntervalSince1970: 1_767_225_600))
         let ledger = QuotaLedger(
             suiteName: makeSuiteName(),
@@ -78,7 +78,7 @@ struct QuotaLedgerTests {
     }
 
     @Test("Yetenekler birbirinin kotasını tüketmez")
-    func capabilitiesAreIndependent() async throws {
+    func capabilitiesAreIndependent() async {
         let ledger = QuotaLedger(
             suiteName: makeSuiteName(),
             dateProvider: MutableDateProvider(),

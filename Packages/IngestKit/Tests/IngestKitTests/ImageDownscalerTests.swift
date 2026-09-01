@@ -36,9 +36,9 @@ struct ImageDownscalerTests {
         let properties = try #require(
             CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
         )
-        return (
-            try #require(properties[kCGImagePropertyPixelWidth] as? Int),
-            try #require(properties[kCGImagePropertyPixelHeight] as? Int)
+        return try (
+            #require(properties[kCGImagePropertyPixelWidth] as? Int),
+            #require(properties[kCGImagePropertyPixelHeight] as? Int)
         )
     }
 

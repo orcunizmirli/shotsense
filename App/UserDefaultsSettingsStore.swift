@@ -27,7 +27,7 @@ actor UserDefaultsSettingsStore: SettingsStoring {
             Key.intelligence: true,
             Key.backgroundIndexing: true,
             Key.chargingOnly: false,
-            Key.cleanup: false,
+            Key.cleanup: false
         ])
     }
 

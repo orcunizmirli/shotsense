@@ -43,7 +43,7 @@ public actor FakeShotSource: ShotSourcing {
         return Data("görsel:\(identifier)".utf8)
     }
 
-    nonisolated public func changes() -> AsyncStream<ShotLibraryChange> {
+    public nonisolated func changes() -> AsyncStream<ShotLibraryChange> {
         AsyncStream { $0.finish() }
     }
 
@@ -240,7 +240,7 @@ public actor FakeEntitlementProvider: EntitlementProviding {
 
     public var current: Entitlement { entitlement }
 
-    nonisolated public func updates() -> AsyncStream<Entitlement> {
+    public nonisolated func updates() -> AsyncStream<Entitlement> {
         AsyncStream { $0.finish() }
     }
 

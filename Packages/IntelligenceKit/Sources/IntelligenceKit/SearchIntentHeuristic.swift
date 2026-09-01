@@ -20,7 +20,7 @@ public enum SearchIntentHeuristic {
         (["etkinlik", "toplantı", "randevu", "event", "meeting"], .event),
         (["iban", "banka", "hesap", "bank", "account"], .banking),
         (["kargo", "takip", "gönderi", "shipping", "tracking"], .shipping),
-        (["kimlik", "pasaport", "ehliyet", "passport", "id"], .identity),
+        (["kimlik", "pasaport", "ehliyet", "passport", "id"], .identity)
     ]
 
     private static let dateKeywords: [(keywords: [String], range: RelativeDateRange)] = [
@@ -28,7 +28,7 @@ public enum SearchIntentHeuristic {
         (["son 30 gün", "geçen ay", "bu ay", "last month", "last 30 days"], .last30Days),
         (["son 3 ay", "son 90 gün", "last 3 months", "last 90 days"], .last90Days),
         (["bu yıl", "this year"], .thisYear),
-        (["geçen yıl", "last year"], .lastYear),
+        (["geçen yıl", "last year"], .lastYear)
     ]
 
     public static func parse(_ query: String) -> SearchIntent {

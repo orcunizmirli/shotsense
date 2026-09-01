@@ -219,6 +219,6 @@ enum GoldenCorpus {
             """,
             expectedCategory: .event,
             expectedEntityKinds: []
-        ),
+        )
     ]
 }

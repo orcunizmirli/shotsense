@@ -79,7 +79,7 @@ public actor EventKitActionPerformer: ActionPerforming {
         case .proceed:
             return
         case .request:
-            let granted = (try? await store.requestFullAccessToReminders()) ?? false
+            let granted = await (try? store.requestFullAccessToReminders()) ?? false
             guard granted else { throw AppError(.permissionDenied, "Hatırlatıcı izni yok") }
         case .denied:
             throw AppError(.permissionDenied, "Hatırlatıcı izni yok")
@@ -93,7 +93,7 @@ public actor EventKitActionPerformer: ActionPerforming {
         case .proceed:
             return
         case .request:
-            let granted = (try? await store.requestWriteOnlyAccessToEvents()) ?? false
+            let granted = await (try? store.requestWriteOnlyAccessToEvents()) ?? false
             guard granted else { throw AppError(.permissionDenied, "Takvim izni yok") }
         case .denied:
             throw AppError(.permissionDenied, "Takvim izni yok")

@@ -21,7 +21,7 @@ public enum ImageDecoding {
             // Çözme anında yapılır, ilk çizimde değil: aksi hâlde kaydırma sırasında
             // ana iş parçacığı çözme için bloke olur ("lazy decode" takılması).
             kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
         ]
         return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }

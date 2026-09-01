@@ -89,7 +89,7 @@ public struct HeuristicAnalyzer: ShotAnalyzing {
         "ve", "ile", "icin", "bir", "bu", "su", "da", "de", "mi", "ne", "her", "daha",
         "olarak", "gibi", "veya", "ama", "cok", "en", "var", "yok", "sonra", "once",
         "the", "and", "for", "with", "this", "that", "you", "your", "are", "was",
-        "from", "have", "has", "not", "all", "can", "will", "but", "out", "get",
+        "from", "have", "has", "not", "all", "can", "will", "but", "out", "get"
     ]
 
     static func tags(from text: String, category: ShotCategory, limit: Int = 5) -> [String] {

@@ -1,5 +1,7 @@
 --swiftversion 6.0
 --indent 4
+# `#if` blokları dış girintiyi korur: platform ayrımı kodu kaydırmaz.
+--ifdef no-indent
 --maxwidth 110
 --wraparguments before-first
 --wrapparameters before-first
@@ -10,5 +12,21 @@
 --stripunusedargs closure-only
 --self remove
 --importgrouping testable-bottom
---disable redundantReturn, wrapMultilineStatementBraces
+
+# Devre dışı bırakılan kurallar ve gerekçeleri:
+#
+# redundantReturn          Tek ifadelik SwiftUI gövdelerinde `return`u zaten yazmıyoruz;
+#                          kural yazdığımız yerlerde (çok dallı fonksiyonlar) okunabilirliği düşürüyor.
+# wrapMultilineStatementBraces
+#                          Sarılmış koşul listelerinden sonra süslü parantezi ayrı satıra
+#                          almak, uzun `guard let` zincirlerinde gereksiz dikey gürültü üretiyor.
+# wrapPropertyBodies       Tasarım jetonları (DesignSystem/Tokens.swift) ve tek ifadelik hesaplanan
+#                          özellikler tek satırda taranabilir olduğunda daha okunur.
+# wrapFunctionBodies       Aynı gerekçe: tek ifadelik yardımcı fonksiyonları üç satıra yaymak
+#                          bilgi yoğunluğunu düşürüyor.
+# wrapIfStatementBodies    Erken çıkış (`if ... { return nil }`) deseni tek satırda kalırsa
+#                          asıl akış gözle daha hızlı izleniyor.
+# wrapLoopBodies           Aynı gerekçe, döngüler için.
+--disable redundantReturn, wrapMultilineStatementBraces, wrapPropertyBodies, wrapFunctionBodies, wrapIfStatementBodies, wrapLoopBodies
+
 --exclude .build, DerivedData, ShotSense.xcodeproj

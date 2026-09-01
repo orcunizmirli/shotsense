@@ -27,13 +27,13 @@ struct LibraryViewModelTests {
     }
 
     @Test("Kayıtlar yeniden eskiye sıralanır")
-    func contentIsSortedNewestFirst() async throws {
+    func contentIsSortedNewestFirst() async {
         let index = FakeIndex(shots: [
             TestDependencies.shot(
                 identifier: "eski",
                 createdAt: TestDependencies.epoch.addingTimeInterval(-86400)
             ),
-            TestDependencies.shot(identifier: "yeni", createdAt: TestDependencies.epoch),
+            TestDependencies.shot(identifier: "yeni", createdAt: TestDependencies.epoch)
         ])
         let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
 
@@ -50,7 +50,7 @@ struct LibraryViewModelTests {
     func categorySelectionFilters() async {
         let index = FakeIndex(shots: [
             TestDependencies.shot(identifier: "fis", category: .receipt),
-            TestDependencies.shot(identifier: "bilet", category: .ticket),
+            TestDependencies.shot(identifier: "bilet", category: .ticket)
         ])
         let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
         await model.load()
@@ -70,7 +70,7 @@ struct LibraryViewModelTests {
         let index = FakeIndex(shots: [
             TestDependencies.shot(identifier: "a", category: .receipt),
             TestDependencies.shot(identifier: "b", category: .receipt),
-            TestDependencies.shot(identifier: "c", category: .ticket),
+            TestDependencies.shot(identifier: "c", category: .ticket)
         ])
         let model = LibraryViewModel(dependencies: TestDependencies.make(index: index))
 

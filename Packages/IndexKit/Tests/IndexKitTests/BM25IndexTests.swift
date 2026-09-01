@@ -29,7 +29,7 @@ struct BM25IndexTests {
                 id: "makale",
                 title: "Teknoloji Haberleri",
                 body: String(repeating: "metin ", count: 200) + "kulaklık"
-            ),
+            )
         ])
         let scores = index.scores(for: "kulaklık")
         #expect((scores["urun"] ?? 0) > (scores["makale"] ?? 0))
@@ -40,7 +40,7 @@ struct BM25IndexTests {
         let index = index([
             Document(id: "a", title: "", body: "toplam kulaklık"),
             Document(id: "b", title: "", body: "toplam kitap"),
-            Document(id: "c", title: "", body: "toplam masa"),
+            Document(id: "c", title: "", body: "toplam masa")
         ])
         let common = index.scores(for: "toplam")
         let rare = index.scores(for: "kulaklık")
@@ -51,7 +51,7 @@ struct BM25IndexTests {
     func nonMatchingDocumentsAreExcluded() {
         let index = index([
             Document(id: "a", title: "", body: "kulaklık"),
-            Document(id: "b", title: "", body: "masa"),
+            Document(id: "b", title: "", body: "masa")
         ])
         let scores = index.scores(for: "kulaklık")
         #expect(scores["b"] == nil)

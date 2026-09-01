@@ -25,9 +25,9 @@ struct ExtractionValidatorTests {
     }
 
     @Test("Yapısal olarak IBAN olamayacak değerler reddedilir", arguments: [
-        "1234567890123456",        // ülke kodu yok
-        "TRAB0006100519786457",    // kontrol haneleri rakam değil
-        "TR33",                    // çok kısa
+        "1234567890123456", // ülke kodu yok
+        "TRAB0006100519786457", // kontrol haneleri rakam değil
+        "TR33", // çok kısa
         ""
     ])
     func rejectsMalformedIBANs(_ value: String) {

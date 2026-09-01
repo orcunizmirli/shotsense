@@ -19,7 +19,7 @@ struct ShotDetailViewModelTests {
         // KANON §6: uydurulmuş bir değer arayüze asla ulaşmaz.
         let shot = TestDependencies.shot(entities: [
             dateEntity("2026-02-14T00:00:00Z", raw: "14 Şubat 2026", grounded: true),
-            dateEntity("2030-01-01T00:00:00Z", raw: "uydurma", grounded: false),
+            dateEntity("2030-01-01T00:00:00Z", raw: "uydurma", grounded: false)
         ])
         let model = ShotDetailViewModel(
             shot: shot,
@@ -35,7 +35,7 @@ struct ShotDetailViewModelTests {
     func actionableDateIsEarliest() {
         let shot = TestDependencies.shot(entities: [
             dateEntity("2026-03-01T00:00:00Z", raw: "1 Mart"),
-            dateEntity("2026-02-14T00:00:00Z", raw: "14 Şubat"),
+            dateEntity("2026-02-14T00:00:00Z", raw: "14 Şubat")
         ])
         let model = ShotDetailViewModel(
             shot: shot,

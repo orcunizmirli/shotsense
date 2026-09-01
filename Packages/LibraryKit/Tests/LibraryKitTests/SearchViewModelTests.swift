@@ -21,7 +21,7 @@ struct SearchViewModelTests {
     }
 
     @Test("Boş sorgu boşta durumuna döner")
-    func emptyQueryIsIdle() async {
+    func emptyQueryIsIdle() {
         let model = makeModel(index: FakeIndex())
         model.queryText = "fiş"
         model.queryText = ""

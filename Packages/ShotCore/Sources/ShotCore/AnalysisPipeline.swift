@@ -235,7 +235,7 @@ public actor AnalysisPipeline {
     }
 
     private func storeThumbnail(for assetIdentifier: String) async {
-        guard (try? await index.thumbnail(for: assetIdentifier)) == nil else { return }
+        guard await (try? index.thumbnail(for: assetIdentifier)) == nil else { return }
         guard let data = try? await source.imageData(
             for: assetIdentifier, maxPixelSize: AnalysisPipeline.thumbnailPixelSize
         ) else { return }

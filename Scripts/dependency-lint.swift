@@ -26,11 +26,11 @@ struct Rule {
 let appleServiceFrameworks: Set<String> = [
     "Vision", "FoundationModels", "Photos", "PhotosUI", "EventKit", "EventKitUI",
     "StoreKit", "Contacts", "ContactsUI", "SwiftData", "CoreSpotlight", "BackgroundTasks",
-    "SwiftUI", "UIKit", "NaturalLanguage",
+    "SwiftUI", "UIKit", "NaturalLanguage"
 ]
 
 let adapterPackages: Set<String> = [
-    "OCRKit", "IntelligenceKit", "IngestKit", "IndexKit", "ActionKit", "PaywallKit",
+    "OCRKit", "IntelligenceKit", "IngestKit", "IndexKit", "ActionKit", "PaywallKit"
 ]
 
 let rules: [Rule] = [
@@ -53,7 +53,7 @@ let rules: [Rule] = [
         description: "LibraryKit adaptör paketi import edemez; yalnız ShotCore portlarını kullanır.",
         packages: ["LibraryKit"],
         forbiddenImports: adapterPackages.union([
-            "Vision", "FoundationModels", "Photos", "EventKit", "StoreKit", "SwiftData",
+            "Vision", "FoundationModels", "Photos", "EventKit", "StoreKit", "SwiftData"
         ]),
         forbiddenSymbols: []
     ),
@@ -77,7 +77,7 @@ let rules: [Rule] = [
         packages: [],
         forbiddenImports: ["Network", "CFNetwork"],
         forbiddenSymbols: ["URLSession", "NWConnection", "CFSocket", "NSURLConnection"]
-    ),
+    )
 ]
 
 // MARK: - Tarama
@@ -190,5 +190,6 @@ print("❌ dependency-lint: \(violations.count) ihlal\n")
 for violation in violations.sorted(by: { $0.file < $1.file }) {
     print("\(violation.file):\(violation.line): error: [\(violation.ruleID)] \(violation.detail)")
 }
+
 print("\nKurallar: docs/03-mimari.md §4 · docs/KANON.md")
 exit(1)

@@ -214,7 +214,7 @@ public actor ShotStore {
     }
 
     public func knownIdentifiers() throws -> Set<String> {
-        Set(try modelContext.fetch(FetchDescriptor<ShotRecord>()).map(\.assetIdentifier))
+        try Set(modelContext.fetch(FetchDescriptor<ShotRecord>()).map(\.assetIdentifier))
     }
 
     public func counts() throws -> IndexCounts {

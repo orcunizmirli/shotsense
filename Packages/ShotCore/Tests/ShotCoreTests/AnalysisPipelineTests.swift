@@ -75,7 +75,7 @@ struct AnalysisPipelineTests {
 
         try await pipeline.synchronizeLibrary()
 
-        let identifiers = Set(await index.storage.keys)
+        let identifiers = await Set(index.storage.keys)
         #expect(identifiers == ["asset-0", "asset-1", "asset-2", "asset-3"])
     }
 
@@ -123,7 +123,7 @@ struct AnalysisPipelineTests {
         let processed = await pipeline.processPending()
 
         #expect(processed == 3)
-        let shots = Array(await index.storage.values)
+        let shots = await Array(index.storage.values)
         #expect(shots.allSatisfy { $0.status == .analyzed })
         #expect(shots.allSatisfy { $0.analysis.title == "başlık" })
         #expect(shots.allSatisfy { $0.indexedAt != nil })
@@ -140,7 +140,7 @@ struct AnalysisPipelineTests {
 
         #expect(await index.thumbnails["asset-0"] != nil)
         // Önizleme ve analiz görselinin boyutu farklı istenmeli.
-        let sizes = Set(await source.imageRequests.map(\.maxPixelSize))
+        let sizes = await Set(source.imageRequests.map(\.maxPixelSize))
         #expect(sizes.contains(AnalysisPipeline.analysisPixelSize))
         #expect(sizes.contains(AnalysisPipeline.thumbnailPixelSize))
     }

@@ -62,7 +62,7 @@ struct ShotSenseApp: App {
             BackgroundIndexer.register(
                 pipeline: container.pipeline, settings: container.dependencies.settings
             )
-            BackgroundIndexer.schedule(settings: await container.dependencies.settings.flags())
+            await BackgroundIndexer.schedule(settings: container.dependencies.settings.flags())
             self.container = container
         } catch {
             Log.error(.lifecycle, "AppContainer kurulamadı", error: error)

@@ -145,7 +145,7 @@ public struct EntityExtractor: Sendable {
             keywords: ["uçuş", "ucus", "flight", "pnr", "sefer"],
             valuePattern: "[A-Z]{2}[ ]?[0-9]{3,4}",
             confidence: 0.8
-        ),
+        )
     ]
 
     private func keyedEntities(in text: String) -> [ExtractedEntity] {

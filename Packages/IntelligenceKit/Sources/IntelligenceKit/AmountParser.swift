@@ -14,7 +14,7 @@ public enum AmountParser {
         "€": "EUR", "EUR": "EUR",
         "£": "GBP", "GBP": "GBP",
         "CHF": "CHF", "SEK": "SEK", "NOK": "NOK", "DKK": "DKK",
-        "PLN": "PLN", "RUB": "RUB", "AED": "AED", "SAR": "SAR",
+        "PLN": "PLN", "RUB": "RUB", "AED": "AED", "SAR": "SAR"
     ]
 
     public struct Match: Sendable, Hashable {
@@ -77,13 +77,15 @@ public enum AmountParser {
         let lastSeparatorIndex = compact.lastIndex { $0 == "." || $0 == "," }
         guard let lastSeparatorIndex else { return Double(compact) }
 
-        let decimalsCount = compact.distance(from: compact.index(after: lastSeparatorIndex),
-                                             to: compact.endIndex)
+        let decimalsCount = compact.distance(
+            from: compact.index(after: lastSeparatorIndex),
+            to: compact.endIndex
+        )
         if decimalsCount == 1 || decimalsCount == 2 {
             let integerPart = compact[compact.startIndex ..< lastSeparatorIndex]
-                .filter { $0.isNumber }
+                .filter(\.isNumber)
             let fractionPart = compact[compact.index(after: lastSeparatorIndex)...]
-                .filter { $0.isNumber }
+                .filter(\.isNumber)
             return Double(integerPart + "." + fractionPart)
         }
         // Tüm ayraçlar binliktir.
