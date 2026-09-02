@@ -69,6 +69,7 @@ Tahminler tek geliştirici / gün cinsindendir. Task ID'leri commit mesajlarınd
 | SS-060 | `OnboardingFlow` 4 adım (değer → örnek → izin → indeksleme) | 1.5 |
 | SS-061 | Boş/hata durumları ✅, ilk çalıştırma performans ölçümü (cihaz gerekli) | 0.5 |
 | SS-062 | App Store materyali (ekran görüntüleri, metin, gizlilik beyanı) — cihaz/hesap gerekli | 1 |
+| SS-063 | TestFlight otomatik dağıtımı ✅ (uygulama ikonu yer tutucu) — `docs/09` | 0.5 |
 
 **v1.0 toplam ≈ 24 gün.**
 

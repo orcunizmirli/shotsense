@@ -24,6 +24,7 @@ aranabilir yapan ve aksiyona çeviren SwiftUI uygulaması.
 | [06 — Monetizasyon](docs/06-monetizasyon.md) | StoreKit 2, limitler, birim ekonomi |
 | [07 — Gizlilik](docs/07-gizlilik.md) | İzinler, App Review, hassas veri |
 | [08 — Yol Haritası](docs/08-yol-haritasi.md) | M0–M6, task listesi, çıkış kriterleri |
+| [09 — TestFlight](docs/09-testflight.md) | Otomatik dağıtım, imzalama, secret kurulumu |
 | [KANON](docs/KANON.md) | Değişmez kurallar |
 
 ## Durum
@@ -106,3 +107,14 @@ unzip -q sf.zip && unzip -q sl.zip -d sl
 ```bash
 python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print('OK')"
 ```
+
+## Dağıtım
+
+Sürüm etiketi atmak TestFlight'a build yükler:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+Gereken bir kerelik kurulum (App Store Connect API anahtarı, dağıtım sertifikası,
+GitHub secret'ları) [docs/09-testflight.md](docs/09-testflight.md) içinde.

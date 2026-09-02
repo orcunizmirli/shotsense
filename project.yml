@@ -13,6 +13,7 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     # KANON §2: App Icon dışında görsel varlık yoktur.
     ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS: NO
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
 packages:
   AppFoundation:   { path: Packages/AppFoundation }
@@ -50,6 +51,10 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
+        # Uygulama hiçbir şifreleme kullanmıyor (ağ yok — KANON §1). Bu anahtar olmadan
+        # App Store Connect HER build için elle "dışa aktarım uyumluluğu" sorusu sorar
+        # ve build, cevaplanana kadar TestFlight'ta beklemede kalır.
+        ITSAppUsesNonExemptEncryption: false
         # KANON §10: portrait-locked.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -87,3 +92,7 @@ schemes:
     test:
       config: Debug
       gatherCoverageData: true
+    # Arşiv her zaman Release: TestFlight'a Debug bir build gitmesi sessiz bir
+    # performans yalanı olurdu (optimizasyon kapalı, testler açık).
+    archive:
+      config: Release
